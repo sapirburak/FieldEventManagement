@@ -1,0 +1,34 @@
+
+@Agent_HostAddress = https://localhost:7256
+@ApiKey = SuperSecretFieldAgentKey2026
+
+### 1. שליחת אירוע תקין (יצליח מיד ויחזיר 202)
+POST {{Agent_HostAddress}}/api/agent/events
+X-Api-Key: {{ApiKey}}
+Content-Type: application/json
+
+{
+  "title": "חיישן טמפרטורה התחמם",
+  "description": "חריגה של 5 מעלות בחדר שרתים א'",
+  "severity": "Critical",
+  "source": "Sensor_RoomA_01"
+}
+
+### 2. שליחת בקשה ללא מפתח אבטחה (ייכשל - 401 Unauthorized)
+POST {{Agent_HostAddress}}/api/agent/events
+Content-Type: application/json
+
+{
+  "title": "ניסיון פריצה",
+  "source": "Gate_02"
+}
+
+### 3. שליחת בקשה עם נתונים חסרים (ייכשל - 400 Bad Request)
+POST {{Agent_HostAddress}}/api/agent/events
+X-Api-Key: {{ApiKey}}
+Content-Type: application/json
+
+{
+  "title": "",
+  "source": ""
+}
