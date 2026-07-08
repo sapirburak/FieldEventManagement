@@ -1,0 +1,17 @@
+@FieldEventManagement.API_HostAddress = https://localhost:7257
+
+### שימי לב לשינוי ל-POST ולכתובת הנכונה
+POST {{FieldEventManagement.API_HostAddress}}/api/events/receiveEvent
+Content-Type: application/json
+
+{
+    "Id": "550e8400-e39b-41d4-a716-446655443021",
+    "Data": {
+        "Title": "Event Test",
+        "Description": "Testing connectivity",
+        "Source": "Agent-01",
+        "Location": "North",
+        "Severity": "High"
+    }
+}
+

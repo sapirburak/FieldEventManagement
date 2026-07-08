@@ -11,6 +11,7 @@ Content-Type: application/json
   "title": "חיישן טמפרטורה התחמם",
   "description": "חריגה של 5 מעלות בחדר שרתים א'",
   "severity": "Critical",
+  "location": "North",
   "source": "Sensor_RoomA_01"
 }
 

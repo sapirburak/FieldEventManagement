@@ -1,10 +1,12 @@
-﻿using System.IO;
-using System.Text.Json;
-using System.Threading.Channels;
+﻿using FieldEventManagement.Agent.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using FieldEventManagement.Agent.Models;
+using System.IO;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
+using System.Threading.Channels;
 
 namespace FieldEventManagement.Agent.Services;
 
@@ -115,16 +117,24 @@ public class EventChannel
     public async ValueTask AddEventAsync(FieldEventDto dto, CancellationToken cancellationToken = default)
     {
         var id = Guid.NewGuid();
-        var eventWithId = new WrappedEvent(id, dto);
-
+        var wrappedEvent = new WrappedEvent(id, dto);
+        // 1. הגדרת האפשרויות כך שלא יקודד תווים מחוץ ל-ASCII (כלומר ישאיר עברית כעברית)
+        var options = new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.Create(
+            UnicodeRanges.Hebrew,
+            UnicodeRanges.BasicLatin // הגרש נמצא בטווח הזה!
+        ),
+            WriteIndented = true
+        };
         // 1. שמירה פיזית לדיסק (Persistence)
         string filePath = Path.Combine(_storageDirectory, $"{id}.json");
-        string json = JsonSerializer.Serialize(eventWithId);
+        string json = JsonSerializer.Serialize(wrappedEvent,options);
         await File.WriteAllTextAsync(filePath, json, cancellationToken);
         _logger.LogInformation("[Storage] Event written to local disk backup. ID: {Id}", id);
 
         // 2. כתיבה לערוץ הזיכרון (In-Memory Queue)
-        await _channel.Writer.WriteAsync(eventWithId, cancellationToken);
+        await _channel.Writer.WriteAsync(wrappedEvent, cancellationToken);
     }
 
     /// <summary>
