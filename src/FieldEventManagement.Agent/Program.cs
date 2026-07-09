@@ -3,6 +3,7 @@ using FieldEventManagement.Agent.Models;
 using FieldEventManagement.Agent.Services;
 using Microsoft.AspNetCore.Mvc;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // --- 1. רישום שירותי המערכת ל-Dependency Injection ---
@@ -32,17 +33,17 @@ builder.Services.AddHttpClient<IBackendClient, BackendClient>(client =>
 .AddHttpMessageHandler<JwtAuthHandler>()
 .AddStandardResilienceHandler(options =>
 {
-    //..TODO
-    // 1. הגדרת ה-Timeout הכולל של כל הניסיונות (למשל, דקה אחת)
-    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(500);
+    ////..TODO
+    //// 1. הגדרת ה-Timeout הכולל של כל הניסיונות (למשל, דקה אחת)
+    //options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(500);
 
-    // 2. הגדרת Timeout לניסיון בודד (אופציונלי, במידה והשרת מגיב לאט)
-    options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(90);
-    // הגדרת ה-Circuit Breaker בצורה מפורשת
-    options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(5); // 300 שניות (גדול מ-180)
-    options.CircuitBreaker.FailureRatio = 0.5; // פתיחת המפסק ב-50% כשלים
-    options.CircuitBreaker.MinimumThroughput = 5; // מינימום בקשות כדי להפעיל הגנה
-    options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+    //// 2. הגדרת Timeout לניסיון בודד (אופציונלי, במידה והשרת מגיב לאט)
+    //options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(90);
+    //// הגדרת ה-Circuit Breaker בצורה מפורשת
+    //options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(5); // 300 שניות (גדול מ-180)
+    //options.CircuitBreaker.FailureRatio = 0.5; // פתיחת המפסק ב-50% כשלים
+    //options.CircuitBreaker.MinimumThroughput = 5; // מינימום בקשות כדי להפעיל הגנה
+    //options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
 
     // הגדרות מותאמות אישית לפוליסת ה-Retry האוטומטית
     options.Retry.MaxRetryAttempts = 3;                  // 3 ניסיונות חוזרים במידה והשרת המרכזי נפל
@@ -63,24 +64,34 @@ app.MapPost("/api/agent/events", async (
     [FromServices] IConfiguration configuration,
     CancellationToken cancellationToken) =>
 {
-    // אבטחה: אימות מפתח ה-API שהתקבל בכותרת הבקשה
-    var expectedKey = configuration["AgentSettings:ExpectedApiKey"];
-    if (string.IsNullOrEmpty(apiKey) || apiKey != expectedKey)
+    try
     {
-        return Results.Unauthorized();
-    }
+        // אבטחה: אימות מפתח ה-API שהתקבל בכותרת הבקשה
+        var expectedKey = configuration["AgentSettings:ExpectedApiKey"];
+        if (string.IsNullOrEmpty(apiKey) || apiKey != expectedKey)
+        {
+            return Results.Unauthorized();
+        }
 
-    // וולידציה בסיסית: בדיקה שהנתונים המרכזיים אינם ריקים
-    if (string.IsNullOrWhiteSpace(fieldEvent.Title) || string.IsNullOrWhiteSpace(fieldEvent.Source))
+        // וולידציה בסיסית: בדיקה שהנתונים המרכזיים אינם ריקים
+        if (string.IsNullOrWhiteSpace(fieldEvent.Title) || string.IsNullOrWhiteSpace(fieldEvent.Source))
+        {
+            return Results.BadRequest("Title and Source are strictly required.");
+        }
+
+        // דחיפה אסינכרונית מהירה לדיסק המקומי ולתור בזיכרון
+        await channel.AddEventAsync(fieldEvent, cancellationToken);
+
+        // החזרת קוד 202 Accepted. המקור החיצוני משתחרר מיד, וה-BackgroundWorker יטפל בשליחה אסינכרונית
+        return Results.Accepted();
+    }
+    catch (Exception ex)
     {
-        return Results.BadRequest("Title and Source are strictly required.");
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+        logger.LogError(ex, "Error processing event"); // בדוק בטרמינל מה ה-Exception
+        return Results.Problem(ex.Message);
     }
-
-    // דחיפה אסינכרונית מהירה לדיסק המקומי ולתור בזיכרון
-    await channel.AddEventAsync(fieldEvent, cancellationToken);
-
-    // החזרת קוד 202 Accepted. המקור החיצוני משתחרר מיד, וה-BackgroundWorker יטפל בשליחה אסינכרונית
-    return Results.Accepted();
 });
 
 // הדפסת לוג יפה המציינת שה-Agent עלה בהצלחה

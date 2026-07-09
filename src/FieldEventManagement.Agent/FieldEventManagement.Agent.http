@@ -1,9 +1,11 @@
 
-@Agent_HostAddress = https://localhost:7255
+@Agent_HostAddress = https://localhost:7256
 @ApiKey = SuperSecretFieldAgentKey2026
+@Agent_HostAddressLcl = http://localhost:5093
+
 
 ### 1. שליחת אירוע תקין (יצליח מיד ויחזיר 202)
-POST {{Agent_HostAddress}}/api/agent/events
+POST {{Agent_HostAddressLcl}}/api/agent/events
 X-Api-Key: {{ApiKey}}
 Content-Type: application/json
 

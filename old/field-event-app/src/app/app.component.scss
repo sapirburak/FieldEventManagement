@@ -1,0 +1,35 @@
+/* עיצוב הניווט */
+nav {
+  background-color: #2c3e50; /* צבע כהה יוקרתי */
+  padding: 1rem 2rem;
+  display: flex;
+  gap: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+nav a {
+  color: #bdc3c7;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: color 0.3s;
+}
+
+/* אפקט ריחוף */
+nav a:hover {
+  color: #ffffff;
+}
+
+/* עיצוב הקישור הפעיל (במידה ואתה משתמש ב-routerLinkActive) */
+nav a.active {
+  color: #ffffff;
+  border-bottom: 2px solid #4A90E2;
+  padding-bottom: 0.2rem;
+}
+
+/* עיצוב המיכל הראשי */
+main {
+  padding: 2rem;
+  background-color: #f9f9f9;
+  min-height: calc(100vh - 72px); /* גובה המסך פחות גובה ה-Navbar */
+}

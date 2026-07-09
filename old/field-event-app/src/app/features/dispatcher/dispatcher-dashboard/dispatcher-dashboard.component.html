@@ -1,0 +1,14 @@
+ <div class="dashboard">
+      <h1>Dispatcher Dashboard</h1>
+      <div class="event-list">
+        @for (event of facade.activeEvents(); track event.id) {
+          <div class="event-card">
+            <h3>{{ event.title }}</h3>
+            <p>{{ event.description }}</p>
+            <button (click)="assign(event.id, 'tech-123')">Assign to Technician</button>
+          </div>
+        } @empty {
+          <p>No active events.</p>
+        }
+      </div>
+    </div>
