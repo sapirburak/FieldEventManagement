@@ -1,8 +1,20 @@
 
-@Agent_HostAddress = https://localhost:7256
+@Agent_HostAddress = https://localhost:7255
 @ApiKey = SuperSecretFieldAgentKey2026
 
 ### 1. שליחת אירוע תקין (יצליח מיד ויחזיר 202)
+POST {{Agent_HostAddress}}/api/agent/events
+X-Api-Key: {{ApiKey}}
+Content-Type: application/json
+
+{
+  "title": "חיישן טמפרטורה התחמם",
+  "description": "חריגה של 5 מעלות בחדר שרתים א'",
+  "severity": "Critical",
+  "location": "North",
+  "source": "Sensor_RoomA_01"
+}
+### 
 POST {{Agent_HostAddress}}/api/agent/events
 X-Api-Key: {{ApiKey}}
 Content-Type: application/json
