@@ -13,16 +13,21 @@ public class AgentBackgroundWorker : BackgroundService
     private readonly EventChannel _eventChannel;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AgentBackgroundWorker> _logger;
+    private readonly TimeSpan _cleanupInterval;
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(10);
 
     public AgentBackgroundWorker(
         EventChannel eventChannel,
         IServiceProvider serviceProvider,
+        IConfiguration configuration,
         ILogger<AgentBackgroundWorker> logger)
     {
         _eventChannel = eventChannel;
         _serviceProvider = serviceProvider;
         _logger = logger;
+
+        var cleanupIntervalHours = configuration.GetValue<int>("AgentSettings:ErrorCleanupIntervalHours", 24 * 7);// ברירת מחדל: שבוע
+        _cleanupInterval = TimeSpan.FromHours(Math.Max(1, cleanupIntervalHours));
     }
 
     /// <summary>
@@ -32,6 +37,8 @@ public class AgentBackgroundWorker : BackgroundService
     {
         _logger.LogInformation("[Engine] Agent Background Worker initialized and listening to the internal channel.");
 
+        var cleanupTask = RunCleanupLoopAsync(stoppingToken);
+
         // לולאה אסינכרונית לא חוסמת על פני ה-Channel
         await foreach (var wrappedEvent in _eventChannel.ReadAllEventsAsync(stoppingToken))
         {
@@ -39,6 +46,37 @@ public class AgentBackgroundWorker : BackgroundService
 
             // העברת הטיפול באירוע הבודד למתודה ייעודית
             await ProcessSingleEventWithRetryAsync(wrappedEvent, stoppingToken);
+        }
+
+        await cleanupTask;
+    }
+
+    private async Task RunCleanupLoopAsync(CancellationToken stoppingToken)
+    {
+        using var timer = new PeriodicTimer(_cleanupInterval);
+
+        while (await timer.WaitForNextTickAsync(stoppingToken))
+        {
+            try
+            {
+                var deletedCount = _eventChannel.DeleteErrorEvents();
+                if (deletedCount > 0)
+                {
+                    _logger.LogInformation("[Engine] Weekly cleanup removed {Count} Error rows from the local database.", deletedCount);
+                }
+                else
+                {
+                    _logger.LogInformation("[Engine] Weekly cleanup completed. No Error rows were found.");
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[Engine] Weekly cleanup failed.");
+            }
         }
     }
 
@@ -76,8 +114,8 @@ public class AgentBackgroundWorker : BackgroundService
     }
 
     /// <summary>
-    /// מבצעת את פניית ה-HTTP בפועל ומנתחת את הסטטוס החוזר (הצלחה, שגיאת רשת, או הודעת רעל).
-    /// מחזירה true אם האירוע "נפתר" (נשלח או נזרק ל-Poison) וניתן להמשיך הלאה, או false אם יש לנסות שוב.
+    /// מבצעת את פניית ה-HTTP בפועל ומנתחת את הסטטוס החוזר (הצלחה, שגיאת רשת, או הודעת שגיאה).
+    /// מחזירה true אם האירוע "נפתר" (נשלח או סומן כ-Error) וניתן להמשיך הלאה, או false אם יש לנסות שוב.
     /// </summary>
     // מתוך מתודת TrySendEventAsync בתוך AgentBackgroundWorker.cs
 
@@ -100,10 +138,9 @@ public class AgentBackgroundWorker : BackgroundService
         if (response.StatusCode == HttpStatusCode.BadRequest ||
             response.StatusCode == HttpStatusCode.UnprocessableEntity)
         {
-            _logger.LogError("[Engine] Poison Message Detected (Status {Code})! Evicting event {Id} to Poison folder.", response.StatusCode, wrappedEvent.Id);
+            _logger.LogError("[Engine] Error response detected (Status {Code})! Marking event {Id} as Error.", response.StatusCode, wrappedEvent.Id);
 
-            // העברה פיזית של הקובץ בדיסק לתיקיית הודעות הרעל
-            _eventChannel.MoveToPoison(wrappedEvent.Id);
+            _eventChannel.MoveToError(wrappedEvent.Id);
             return true; // נפתר (הוסר מהתור), ניתן להמשיך להודעה הבאה
         }
 

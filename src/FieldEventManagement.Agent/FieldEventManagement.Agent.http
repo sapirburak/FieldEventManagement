@@ -28,6 +28,17 @@ Content-Type: application/json
   "location": "North",
   "source": "Sensor_RoomA_01"
 }
+### כשלון עקב חוסר בפרמטר 
+POST {{Agent_HostAddress}}/api/agent/events
+X-Api-Key: {{ApiKey}}
+Content-Type: application/json
+
+{
+  "title": "חיישן טמפרטורה התחמם",
+  "description": "חריגה של 5 מעלות בחדר שרתים א'",
+  "severity": "Critical", 
+  "source": "Sensor_RoomA_01"
+}
 
 ### 2. שליחת בקשה ללא מפתח אבטחה (ייכשל - 401 Unauthorized)
 POST {{Agent_HostAddress}}/api/agent/events

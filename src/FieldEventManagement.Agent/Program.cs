@@ -1,5 +1,6 @@
 // Program.cs
 using FieldEventManagement.Agent.Models;
+using FieldEventManagement.Agent.Repositories;
 using FieldEventManagement.Agent.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // --- 1. רישום שירותי המערכת ל-Dependency Injection ---
 
-// רישום תור הזיכרון ומערכת הגיבוי המקומית כ-Singleton (עותק יחיד לכל האפליקציה)
+// רישום מאגר SQLite ותור הזיכרון של ה-Agent כ-Singleton (עותק יחיד לכל האפליקציה)
+builder.Services.AddSingleton<ISqliteEventRepository, SqliteEventRepository>();
 builder.Services.AddSingleton<EventChannel>();
 
 // רישום שירות הרקע שירוץ בצורה עצמאית ויקשיב לתור
