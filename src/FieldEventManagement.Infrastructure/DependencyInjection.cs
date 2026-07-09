@@ -1,4 +1,5 @@
 ﻿using FieldEventManagement.Application.Interfaces;
+using FieldEventManagement.Core.Interfaces;
 using FieldEventManagement.Infrastructure.Notifications;
 using FieldEventManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -23,9 +24,11 @@ public static class DependencyInjection
 
         // 2. הזרקת ה-Repositories
         services.AddScoped<IFieldEventRepository, FieldEventRepository>();
+         services.AddScoped<IUserRepository, UserRepository>();
 
         // 3. הזרקת שירות ההתראות
         services.AddScoped<IRealTimeNotificationService, RealTimeNotificationService>();
+
 
         return services;
     }

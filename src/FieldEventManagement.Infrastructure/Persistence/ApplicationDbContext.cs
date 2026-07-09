@@ -11,6 +11,7 @@ public class ApplicationDbContext : DbContext
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<FieldEvent> FieldEvents { get; set; }
+    public DbSet<User> Users { get; set; }  
     // הערה: EF Core יודע למפות את ה-List הפנימי ב-FieldEvent אוטומטית אם נגדיר זאת נכון, 
     // או שניתן להוסיף DbSet ל-EventStateHistory אם נרצה גישה ישירה.
     /// <summary>

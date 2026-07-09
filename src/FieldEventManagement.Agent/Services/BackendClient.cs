@@ -2,10 +2,12 @@
 using FieldEventManagement.Agent.Models;
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace FieldEventManagement.Agent.Services;
 
+/// <summary>
+/// HTTP client for communicating with the central backend API.
+/// </summary>
 public class BackendClient : IBackendClient
 {
     private readonly HttpClient _httpClient;
@@ -23,13 +25,8 @@ public class BackendClient : IBackendClient
 
         try
         {
-            //var response = await _httpClient.PostAsJsonAsync("/api/events", fieldEvent, cancellationToken);
-            WrappedEvent wrappedEvent = new WrappedEvent(Guid.NewGuid(), fieldEvent);
-            var handler = new HttpClientHandler();
-            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
-            var client = new HttpClient(handler);
-            var response = await client.PostAsJsonAsync("https://localhost:7257/api/events/receiveEvent", wrappedEvent);
-
+            var wrappedEvent = new WrappedEvent(Guid.NewGuid(), fieldEvent);
+            var response = await _httpClient.PostAsJsonAsync("/api/events/receiveEvent", wrappedEvent, cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
@@ -37,18 +34,19 @@ public class BackendClient : IBackendClient
                 return new BackendResponseDto { IsSuccess = true, StatusCode = response.StatusCode };
             }
 
-            var content = await response.Content.ReadAsStringAsync();
-            // תכתבי לי מה כתוב ב-content הזה!
-            Console.WriteLine($"Status Code: {response.StatusCode}");
-            Console.WriteLine($"Response Content: {content}");
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogWarning("[HTTP Network] Failed. Backend returned non-success code: {StatusCode}. Response: {Content}", response.StatusCode, content);
 
-            _logger.LogWarning("[HTTP Network] Failed. Backend returned non-success code: {StatusCode}", response.StatusCode);
             return new BackendResponseDto { IsSuccess = false, StatusCode = response.StatusCode };
         }
         catch (HttpRequestException ex)
         {
-            // שגיאות רשת קשות (כמו שרת כבוי) נזרקות מעלה כדי שה-Worker ידע להקפיא את התור
             _logger.LogError(ex, "[HTTP Network] Network connection failure to central backend.");
+            throw;
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogWarning(ex, "[HTTP Network] Request was cancelled.");
             throw;
         }
         catch (Exception ex)

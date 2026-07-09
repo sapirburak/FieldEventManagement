@@ -13,14 +13,37 @@ builder.Services.AddSingleton<EventChannel>();
 // רישום שירות הרקע שירוץ בצורה עצמאית ויקשיב לתור
 builder.Services.AddHostedService<AgentBackgroundWorker>();
 
+builder.Services.AddTransient<JwtAuthHandler>();
+
+builder.Services.AddHttpClient("InsecureClient")
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var handler = new HttpClientHandler();
+        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+        return handler;
+    });
+
 // רישום ה-HttpClient יחד עם מנגנון ה-Resilience המובנה של .NET 10 (Polly החדש)
 builder.Services.AddHttpClient<IBackendClient, BackendClient>(client =>
 {
-    var backendUrl = builder.Configuration["AgentSettings:BackendUrl"] ?? "https://localhost:7001";
+    var backendUrl = builder.Configuration["AgentSettings:BackendUrl"] ?? "https://localhost:7257";
     client.BaseAddress = new Uri(backendUrl);
 })
+.AddHttpMessageHandler<JwtAuthHandler>()
 .AddStandardResilienceHandler(options =>
 {
+    //..TODO
+    // 1. הגדרת ה-Timeout הכולל של כל הניסיונות (למשל, דקה אחת)
+    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(500);
+
+    // 2. הגדרת Timeout לניסיון בודד (אופציונלי, במידה והשרת מגיב לאט)
+    options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(90);
+    // הגדרת ה-Circuit Breaker בצורה מפורשת
+    options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(5); // 300 שניות (גדול מ-180)
+    options.CircuitBreaker.FailureRatio = 0.5; // פתיחת המפסק ב-50% כשלים
+    options.CircuitBreaker.MinimumThroughput = 5; // מינימום בקשות כדי להפעיל הגנה
+    options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+
     // הגדרות מותאמות אישית לפוליסת ה-Retry האוטומטית
     options.Retry.MaxRetryAttempts = 3;                  // 3 ניסיונות חוזרים במידה והשרת המרכזי נפל
     options.Retry.Delay = TimeSpan.FromSeconds(2);        // המתנה של 2 שניות בין ניסיון לניסיון

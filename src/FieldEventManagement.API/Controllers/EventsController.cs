@@ -1,11 +1,13 @@
 ﻿using FieldEventManagement.Application.DTOs;
 using FieldEventManagement.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Data.Common;
 
 namespace FieldEventManagement.Api.Controllers;
 
+[Authorize(Roles = "Scheduler")] // רק מי שיש לו Role של Scheduler בטוקן יעבור
 [ApiController]
 [Route("api/[controller]")]
 public class EventsController : ControllerBase
@@ -17,7 +19,7 @@ public class EventsController : ControllerBase
         _eventService = eventService;
     }
 
-   
+    [Authorize] // כל מי שמחזיק טוקן תקין (לא משנה התפקיד)
     [HttpPost("receiveEvent")]
     public async Task<IActionResult> ReceiveEvent([FromBody] WrappedEvent incomingEvent)
     {

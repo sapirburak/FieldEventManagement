@@ -13,5 +13,30 @@ Content-Type: application/json
         "Location": "North",
         "Severity": "High"
     }
+
+
+    ### 1. ביצוע Login לקבלת טוקן
+POST {{FieldEventManagement.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+    "username": "sapir",
+    "password": "1234"
+}
+
+### 2. שימוש בטוקן שקיבלת כדי לשלוח אירוע (Events)
+POST {{FieldEventManagement.API_HostAddress}}/api/events/receiveEvent
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoic2FwaXIiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJTY2hlZHVsZXIiLCJleHAiOjE3ODM2ODI4MTMsImlzcyI6IkZpZWxkRXZlbnRTeXN0ZW0iLCJhdWQiOiJGaWVsZEV2ZW50U3lzdGVtIn0.RDopTxEG_C9IKPo1mCgl0-wCGsvKHP09-36w3_htNzs
+
+{
+    "Id": "550e8400-e39b-41d4-a716-446655443021",
+    "Data": {
+        "Title": "Event Test",
+        "Description": "Testing connectivity",
+        "Source": "Agent-01",
+        "Location": "North",
+        "Severity": "High"
+    }
 }
 
