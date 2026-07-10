@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FieldEventManagement.Core.Exceptions;
+using System;
 using System.Collections.Generic;
 
 namespace FieldEventManagement.Core.Entities;
@@ -45,8 +46,13 @@ public class FieldEvent
     }
 
     // אכיפת ה-State Machine - הלב הארכיטקטוני של הדרישה
-    public void TransitionTo(EventStatus newStatus, string updatedBy)
+    public void TransitionTo(EventStatus newStatus, string updatedBy, string? actingRole = null)
     {
+        if (newStatus == EventStatus.Cancelled && !IsCancellationAuthorized(actingRole))
+        {
+            throw new InvalidFieldEventStateException("ביטול אירוע מותר רק למשתמש עם תפקיד Dispatcher.");
+        }
+
         bool isValidTransition = (Status, newStatus) switch
         {
             // 1. ממצב ראשוני מותר להקצות או לבטל
@@ -68,12 +74,15 @@ public class FieldEvent
 
         if (!isValidTransition)
         {
-            throw new InvalidOperationException($"מעבר מצב לא חוקי: לא ניתן לעבור ממצב {Status} למצב {newStatus}.");
+            throw new InvalidFieldEventStateException($"מעבר מצב לא חוקי: לא ניתן לעבור ממצב {Status} למצב {newStatus}.");
         }
 
         Status = newStatus;
         _history.Add(new EventStateHistory(Id, newStatus, updatedBy, DateTime.UtcNow));
     }
+
+    private static bool IsCancellationAuthorized(string? actingRole)
+        => string.Equals(actingRole, "Dispatcher", StringComparison.OrdinalIgnoreCase);
 
     // מתודת עזר ייעודית להקצאת טכנאי
     public void AssignToTechnician(string technicianId, string dispatcherId)
