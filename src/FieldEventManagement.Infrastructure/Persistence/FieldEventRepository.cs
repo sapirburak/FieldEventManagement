@@ -21,6 +21,15 @@ public class FieldEventRepository : IFieldEventRepository
     public async Task<bool> ExistsAsync(Guid id) =>
         await _context.FieldEvents.AnyAsync(e => e.Id == id);
 
+    /// <summary>
+    /// שולף אירוע כולל היסטוריית המצבים (Include) שנדרשת ל-State Machine.
+    /// Include הכרחי כאן כי ה-History הוא private collection שלא נטען אוטומטית.
+    /// </summary>
+    public async Task<FieldEvent?> GetByIdAsync(Guid id) =>
+        await _context.FieldEvents
+            .Include("_history") // שם השדה הפנימי – נדרש כי ה-collection הוא private
+            .FirstOrDefaultAsync(e => e.Id == id);
+
     public async Task AddAsync(FieldEvent fieldEvent) =>
         await _context.FieldEvents.AddAsync(fieldEvent);
 

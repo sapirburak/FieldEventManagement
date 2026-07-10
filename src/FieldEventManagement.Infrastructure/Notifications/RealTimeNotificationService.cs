@@ -12,9 +12,9 @@ public class RealTimeNotificationService : IRealTimeNotificationService
     private readonly IHubContext<EventHub> _hubContext;
 
     public RealTimeNotificationService(IHubContext<EventHub> hubContext) => _hubContext = hubContext;
+
     /// <summary>
-    /// משדר הודעה לכל הלקוחות המחוברים לקבוצת 'Schedulers'.
-    /// מנתק את ה-Application מהתלות בספריית ה-SignalR עצמה (Dependency Inversion).
+    /// שולח לכל הסדרנים המחוברים על אירוע חדש שהגיע מה-Agent.
     /// </summary>
     public async Task NotifyDispatcherOfNewEventAsync(Guid eventId, string title, string location)
     {
@@ -23,6 +23,53 @@ public class RealTimeNotificationService : IRealTimeNotificationService
             eventId,
             title,
             location,
+            timestamp = DateTime.UtcNow
+        });
+    }
+
+    /// <summary>
+    /// שולח לכל הסדרנים שטכנאי עדכן סטטוס על אירוע פעיל.
+    /// Angular event: "ReceiveStatusUpdate"
+    /// </summary>
+    public async Task NotifySchedulerOfStatusUpdateAsync(Guid eventId, string newStatus, string technicianId)
+    {
+        await _hubContext.Clients.Group("Schedulers").SendAsync("ReceiveStatusUpdate", new
+        {
+            eventId,
+            newStatus,
+            technicianId,
+            timestamp = DateTime.UtcNow
+        });
+    }
+
+    /// <summary>
+    /// שולח לכל הסדרנים שטכנאי הוסיף הערה על אירוע.
+    /// Angular event: "ReceiveNote"
+    /// </summary>
+    public async Task NotifySchedulerOfNoteAsync(Guid eventId, string note, string technicianId)
+    {
+        await _hubContext.Clients.Group("Schedulers").SendAsync("ReceiveNote", new
+        {
+            eventId,
+            note,
+            technicianId,
+            timestamp = DateTime.UtcNow
+        });
+    }
+
+    /// <summary>
+    /// TODO: לממש לאחר שנוסיף ניהול ConnectionId לכל טכנאי.
+    /// כרגע שולח לכל הסדרנים כ-fallback.
+    /// בפרודקשן: נשלח ישירות לטכנאי לפי ConnectionId שמור.
+    /// </summary>
+    public async Task NotifyTechnicianOfAssignmentAsync(Guid eventId, string technicianId, string title)
+    {
+        // TODO: החלף בשליחה ישירה לConnectionId של הטכנאי
+        await _hubContext.Clients.Group("Schedulers").SendAsync("ReceiveAssignment", new
+        {
+            eventId,
+            technicianId,
+            title,
             timestamp = DateTime.UtcNow
         });
     }

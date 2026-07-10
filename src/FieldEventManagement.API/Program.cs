@@ -1,4 +1,5 @@
 using FieldEventManagement.Application.Services;
+using FieldEventManagement.Infrastructure.Persistence;
 using FieldEventManagement.Core.Interfaces;
 using FieldEventManagement.Infrastructure; // בשביל ה-DependencyInjection שלנו
 using FieldEventManagement.Infrastructure.Notifications;
@@ -14,8 +15,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddInfrastructure(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
 
-// 2. רישום ה-Service של ה-Application
+// 2. רישום שירותי ה-Application
 builder.Services.AddScoped<EventReceiverService>();
+builder.Services.AddScoped<TechnicianEventService>();
 // 1. רישום שירות הטוקנים (Infrastructure)
 builder.Services.AddScoped<ITokenService, TokenService>();
 

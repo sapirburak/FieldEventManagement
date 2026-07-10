@@ -1,9 +1,63 @@
- <div class="tech-view">
-      <h1>My Assigned Events</h1>
-      @for (event of myEvents(); track event.id) {
-        <div class="event-card">
-          <h4>{{ event.title }}</h4>
-          <button>Update Status</button>
-        </div>
+<div class="tech-view">
+
+  <!-- ══ Section 1: אירועים המוקצים לטכנאי ══ -->
+  <section>
+    <h1>My Assigned Events</h1>
+
+    @if (myEvents().length === 0) {
+      <p>No events assigned to you.</p>
     }
+
+    @for (event of myEvents(); track event.id) {
+      <div class="event-card">
+        <h4>{{ event.title }}</h4>
+        <p>{{ event.description }}</p>
+        <p>📍 {{ event.location }}</p>
+        <span class="badge">{{ event.status }}</span>
+
+        <!-- כפתורי מעבר מצב – מוצגים רק אם המעבר חוקי לפי ה-State Machine -->
+        @if (event.status === EventStatus.Assigned) {
+          <button (click)="onUpdateStatus(event, EventStatus.InProgress)">
+            Start Working
+          </button>
+        }
+        @if (event.status === EventStatus.InProgress) {
+          <button (click)="onUpdateStatus(event, EventStatus.Completed)">
+            Mark Complete
+          </button>
+        }
+
+        <!-- שליחת הערה לסדרן -->
+        <div class="note-section">
+          <input
+            type="text"
+            placeholder="Send a note to the scheduler..."
+            [ngModel]="noteText()"
+            (ngModelChange)="noteText.set($event)"
+          />
+          <button (click)="onSendNote(event.id)" [disabled]="!noteText().trim()">
+            Send Note
+          </button>
         </div>
+      </div>
+    }
+  </section>
+
+  <!-- ══ Section 2: אירועים פנויים לבקשה ══ -->
+  <section>
+    <h2>Available Events</h2>
+
+    @if (unassignedEvents().length === 0) {
+      <p>No unassigned events at the moment.</p>
+    }
+
+    @for (event of unassignedEvents(); track event.id) {
+      <div class="event-card event-card--available">
+        <h4>{{ event.title }}</h4>
+        <p>📍 {{ event.location }}</p>
+        <button (click)="onRequestEvent(event.id)">Request this event</button>
+      </div>
+    }
+  </section>
+
+</div>
