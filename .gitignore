@@ -25,3 +25,5 @@
 /src/FieldEventManagement.Agent/LocalDatabase
 /src/FieldEventManagement.Core.Tests/bin/Debug/net10.0
 /src/FieldEventManagement.Core.Tests/obj
+/src/FieldEventManagement.Agent.Tests/bin/Debug/net10.0
+/src/FieldEventManagement.Agent.Tests/obj
