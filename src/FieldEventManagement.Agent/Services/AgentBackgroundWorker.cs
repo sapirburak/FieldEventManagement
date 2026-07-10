@@ -16,7 +16,17 @@ public class AgentBackgroundWorker : BackgroundService
     private readonly TimeSpan _cleanupInterval;
     private readonly TimeSpan _errorRetentionPeriod;
     private readonly TimeSpan _completedRetentionPeriod;
-    private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(10);
+    // Exponential backoff schedule: each consecutive failure moves to the next slot.
+    // Trade-off: recovery detection is slower (up to 5 min) but the dead backend gets
+    // far fewer pointless requests and logs stay readable.
+    // A successful delivery resets the attempt counter to zero.
+    private static readonly TimeSpan[] RetryDelays =
+    [
+        TimeSpan.FromSeconds(10),  // attempt 1
+        TimeSpan.FromSeconds(30),  // attempt 2
+        TimeSpan.FromSeconds(60),  // attempt 3
+        TimeSpan.FromMinutes(5)    // attempt 4+ (cap)
+    ];
 
     public AgentBackgroundWorker(
         EventChannel eventChannel,
@@ -96,34 +106,67 @@ public class AgentBackgroundWorker : BackgroundService
     }
 
     /// <summary>
-    /// מנהלת את לולאת הניסיונות החוזרים עבור אירוע ספציפי, עד שהוא נמסר או מסווג כהודעה שגויה.
+    /// מנהלת את לולאת הניסיונות החוזרים עבור אירוע ספציפי עם Exponential Backoff.
+    /// כל כשל רצוף מגדיל את זמן ההמתנה לפי RetryDelays. הצלחה מאפסת את הספירה.
+    ///
+    /// מחזור החיים של האירוע בתוך הפונקציה:
+    ///
+    ///  ┌─────────────────────────────────────────────────────┐
+    ///  │              ProcessSingleEventWithRetryAsync        │
+    ///  │                                                     │
+    ///  │   attemptIndex = 0                                  │
+    ///  │         │                                           │
+    ///  │         ▼                                           │
+    ///  │   ┌─────────────┐                                   │
+    ///  │   │TrySendEvent │                                   │
+    ///  │   └──────┬──────┘                                   │
+    ///  │          │                                          │
+    ///  │    ┌─────┴──────────────┐                          │
+    ///  │    │ הצלחה?            │ כשל?                     │
+    ///  │    ▼                   ▼                           │
+    ///  │  isResolved=true   attemptIndex++                  │
+    ///  │  attemptIndex=0    delay = RetryDelays[min(idx,3)] │
+    ///  │  יציאה מהלולאה    await Task.Delay(delay)         │
+    ///  │                    חזרה לתחילת הלולאה             │
+    ///  └─────────────────────────────────────────────────────┘
+    ///
+    /// לוח זמנים:
+    ///   כשל 1 → 10s | כשל 2 → 30s | כשל 3 → 60s | כשל 4+ → 5min (גג)
     /// </summary>
     private async Task ProcessSingleEventWithRetryAsync(WrappedEvent wrappedEvent, CancellationToken stoppingToken)
     {
         bool isResolved = false;
+        int attemptIndex = 0;
 
         while (!isResolved && !stoppingToken.IsCancellationRequested)
         {
             try
             {
-                // ניסיון שליחה בודד וקבלת החלטה ארכיטקטונית
                 isResolved = await TrySendEventAsync(wrappedEvent, stoppingToken);
+
+                if (isResolved)
+                    attemptIndex = 0; // reset backoff on success so the next event starts fresh
             }
             catch (HttpRequestException ex)
             {
-                // כשל תקשורת קשיח - הרשת נפלה או השרת כבוי לחלוטין. מקפיאים את התור מבלי לקדם אותו.
-                _logger.LogWarning("[Engine] Network unavailable (Server down). Freezing queue. Retrying in {Seconds}s... Details: {Msg}", RetryDelay.TotalSeconds, ex.Message);
+                var delay = RetryDelays[Math.Min(attemptIndex, RetryDelays.Length - 1)];
+                _logger.LogWarning(
+                    "[Engine] Network unavailable (attempt #{Attempt}). Retrying in {Seconds}s. Details: {Msg}",
+                    attemptIndex + 1, delay.TotalSeconds, ex.Message);
             }
             catch (Exception ex)
             {
-                // הגנה מפני קריסות פנימיות לא צפויות
-                _logger.LogError(ex, "[Engine] Unexpected internal error processing event {Id}. Retrying in {Seconds}s...", wrappedEvent.Id, RetryDelay.TotalSeconds);
+                var delay = RetryDelays[Math.Min(attemptIndex, RetryDelays.Length - 1)];
+                _logger.LogError(ex,
+                    "[Engine] Unexpected error on event {Id} (attempt #{Attempt}). Retrying in {Seconds}s.",
+                    wrappedEvent.Id, attemptIndex + 1, delay.TotalSeconds);
             }
 
-            // אם האירוע לא נפתר (עקב שגיאת רשת או שרת), ממתינים לפני הניסיון הבא
             if (!isResolved)
             {
-                await Task.Delay(RetryDelay, stoppingToken);
+                var delay = RetryDelays[Math.Min(attemptIndex, RetryDelays.Length - 1)];
+                attemptIndex++;
+                await Task.Delay(delay, stoppingToken);
             }
         }
     }
