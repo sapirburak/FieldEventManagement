@@ -21,12 +21,13 @@ export interface FieldEvent {
 
 /**
  * המצבים האפשריים במחזור החיים של האירוע (State Machine).
- * הגדרה זו חייבת להיות מסונכרנת עם צד השרת.
+ * הערכים חייבים להתאים בדיוק ל-enum EventStatus שבצד ה-Backend (.NET Core),
+ * כי SignalR מסריל את שם ה-enum כמחרוזת.
  */
 export enum EventStatus {
-  New = 'New',
-  Assigned = 'Assigned',
-  InProgress = 'InProgress',
-  Closed = 'Closed',
-  Cancelled = 'Cancelled'
+  Unassigned = 'Unassigned', // מצב ראשוני – תואם Backend: Unassigned
+  Assigned = 'Assigned',     // הוקצה לטכנאי
+  InProgress = 'InProgress', // בטיפול
+  Completed = 'Completed',   // הושלם – תואם Backend: Completed (לא Closed)
+  Cancelled = 'Cancelled'    // מבוטל
 }

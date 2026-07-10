@@ -9,40 +9,47 @@ import { FieldEvent } from '../../data/models/field-event.model';
 })
 export class SignalRService {
     private hubConnection!: signalR.HubConnection;
+    private connectionStarted = false;
 
-    // זה ה-State שלנו: "זרם" של אירועים שרכיבים יכולים להירשם אליו
     public eventReceived = new BehaviorSubject<FieldEvent | null>(null);
 
     constructor(@Inject(PLATFORM_ID) private platformId: Object) {
-        // בדיקת הגנה: האם אנחנו רצים בדפדפן?
-        if (isPlatformBrowser(this.platformId)) {
-            this.initConnection();
-        }
+        // אין קריאה לחיבור כאן. החיבור נפתח רק לאחר login מוצלח.
+        // ראה startConnection() למטה.
     }
 
-    private initConnection(): void {
-        // הגדרת החיבור ל-Hub של ה-Backend
-    const token = localStorage.getItem('access_token'); // החליפי 'access_token' בשם המפתח שבו את שומרת את הטוקן
+    /**
+     * נקרא פעם אחת אחרי login מוצלח.
+     * accessTokenFactory היא פונקציה שנקראת מחדש בכל reconnect –
+     * כך הtoken תמיד עדכני ולא מוקפא מרגע האתחול.
+     */
+    public startConnection(): void {
+        if (!isPlatformBrowser(this.platformId) || this.connectionStarted) {
+            return;
+        }
 
-    this.hubConnection = new signalR.HubConnectionBuilder()
-        .withUrl('https://localhost:7257/eventHub', {
-            // ה-accessTokenFactory מצפה לפונקציה שמחזירה מחרוזת (string) או Promise שמחזיר מחרוזת
-            accessTokenFactory: () => token || '' 
-        })
-        .withAutomaticReconnect()
-        .build();
-        // התחלת החיבור
-        this.hubConnection
-            .start()
-            .then(() => {
-                console.log('SignalR Connection started');
-                this.hubConnection.invoke('JoinDispatcherGroup'); // הוספת המשתמש לקבוצה
+        this.connectionStarted = true;
+
+        this.hubConnection = new signalR.HubConnectionBuilder()
+            .withUrl('https://localhost:7257/eventHub', {
+                // קריאה ל-localStorage בכל פעם מחדש (לא מקפיאים את הtoken).
+                // חשוב גם ל-reconnect: אם הtoken התחלף, החיבור יחודש עם הtoken הנכון.
+                accessTokenFactory: () => localStorage.getItem('access_token') ?? ''
             })
-            .catch(err => console.error('Error while starting connection: ', err));
+            .withAutomaticReconnect()
+            .build();
 
-        // האזנה לאירוע ספציפי מהשרת
         this.hubConnection.on('ReceiveNewEvent', (data: FieldEvent) => {
             this.eventReceived.next(data);
         });
+
+        this.hubConnection
+            .start()
+            .then(() => {
+                console.log('[SignalR] Connection established.');
+                return this.hubConnection.invoke('JoinSchedulerGroup');
+            })
+            .then(() => console.log('[SignalR] Joined Schedulers group.'))
+            .catch(err => console.error('[SignalR] Connection failed:', err));
     }
 }

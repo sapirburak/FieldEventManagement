@@ -19,23 +19,27 @@ public class BackendClient : IBackendClient
         _logger = logger;
     }
 
-    public async Task<BackendResponseDto> SendEventToBackendAsync(FieldEventDto fieldEvent, CancellationToken cancellationToken)
+    public async Task<BackendResponseDto> SendEventToBackendAsync(WrappedEvent wrappedEvent, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("[HTTP Network] Attempting to forward event '{Title}' to central backend...", fieldEvent.Title);
+        _logger.LogInformation("[HTTP Network] Attempting to forward event '{Title}' (Id: {Id}) to central backend...",
+            wrappedEvent.Data.Title, wrappedEvent.Id);
 
         try
         {
-            var wrappedEvent = new WrappedEvent(Guid.NewGuid(), fieldEvent);
+            // wrappedEvent.Id הוא ה-Id שנשמר ב-SQLite – לא יוצרים Guid חדש.
+            // זה מבטיח שהשרת יכיר retry כאותו אירוע (Idempotency).
             var response = await _httpClient.PostAsJsonAsync("/api/events/receiveEvent", wrappedEvent, cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("[HTTP Network] Success! Backend accepted event '{Title}'. Status: {StatusCode}", fieldEvent.Title, response.StatusCode);
+                _logger.LogInformation("[HTTP Network] Success! Backend accepted event '{Title}' (Id: {Id}). Status: {StatusCode}",
+                    wrappedEvent.Data.Title, wrappedEvent.Id, response.StatusCode);
                 return new BackendResponseDto { IsSuccess = true, StatusCode = response.StatusCode };
             }
 
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogWarning("[HTTP Network] Failed. Backend returned non-success code: {StatusCode}. Response: {Content}", response.StatusCode, content);
+            _logger.LogWarning("[HTTP Network] Failed. Backend returned non-success code: {StatusCode} for event '{Title}' (Id: {Id}). Response: {Content}",
+                response.StatusCode, wrappedEvent.Data.Title, wrappedEvent.Id, content);
 
             return new BackendResponseDto { IsSuccess = false, StatusCode = response.StatusCode };
         }

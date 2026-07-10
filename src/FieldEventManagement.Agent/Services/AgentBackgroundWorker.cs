@@ -139,8 +139,8 @@ public class AgentBackgroundWorker : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var backendClient = scope.ServiceProvider.GetRequiredService<IBackendClient>();
 
-        // קריאה לפונקציה המקורית, שמחזירה כעת תשובה מפורטת
-        var response = await backendClient.SendEventToBackendAsync(wrappedEvent.Data, stoppingToken);
+        // מעבירים את ה-wrappedEvent המלא (כולל ה-Id מ-SQLite) כדי לשמר Idempotency.
+        var response = await backendClient.SendEventToBackendAsync(wrappedEvent, stoppingToken);
 
         // תרחיש א': הצלחה מלאה
         if (response.IsSuccess)

@@ -24,8 +24,7 @@ public class TokenService : ITokenService
             new Claim(ClaimTypes.Role, role) // כאן אנחנו שותלים את התפקיד בטוקן!
         };
 
-        //var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_key))
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("12345678901234567890123456789012"));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(

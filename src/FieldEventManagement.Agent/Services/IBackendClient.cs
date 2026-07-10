@@ -6,7 +6,9 @@ namespace FieldEventManagement.Agent.Services;
 public interface IBackendClient
 {
     /// <summary>
-    /// שולח אירוע שטח בודד אל השרת המרכזי
+    /// שולח אירוע שטח בודד אל השרת המרכזי.
+    /// מקבל את ה-WrappedEvent המלא כדי לשמר את ה-Id המקורי מ-SQLite
+    /// ולאפשר בדיקת Idempotency תקינה בצד השרת.
     /// </summary>
-    Task<BackendResponseDto> SendEventToBackendAsync(FieldEventDto fieldEvent, CancellationToken cancellationToken);
+    Task<BackendResponseDto> SendEventToBackendAsync(WrappedEvent wrappedEvent, CancellationToken cancellationToken);
 }

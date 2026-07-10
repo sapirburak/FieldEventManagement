@@ -1,5 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { FieldEvent } from '../models/field-event.model';
+import { EventStatus, FieldEvent } from '../models/field-event.model';
 import { SignalRService } from '../../core/services/signalr.service';
 
 /**
@@ -15,7 +15,9 @@ export class EventStore {
    * Signal מחושב המציג רק אירועים שאינם סגורים.
    * מתעדכן אוטומטית בכל פעם שה-events משתנה.
    */
-  public activeEvents = computed(() => this.events().filter(e => e.status !== 'Closed'));
+  public activeEvents = computed(() =>
+    this.events().filter(e => e.status !== EventStatus.Completed && e.status !== EventStatus.Cancelled)
+  );
 
   constructor(private signalRService: SignalRService) {
     this.signalRService.eventReceived.subscribe(newEvent => {

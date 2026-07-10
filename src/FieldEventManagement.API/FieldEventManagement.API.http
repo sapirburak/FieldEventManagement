@@ -15,7 +15,7 @@ Content-Type: application/json
     }
 
 
-    ### 1. ביצוע Login לקבלת טוקן
+### 1. ביצוע Login לקבלת טוקן
 POST {{FieldEventManagement.API_HostAddress}}/api/auth/login
 Content-Type: application/json
 
