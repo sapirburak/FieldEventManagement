@@ -2,28 +2,12 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/src/.vs/FieldEventManagement/CopilotIndices/18.7.1253.33689
-/src/.vs/FieldEventManagement.slnx/copilot-chat/aa3b358c/sessions
-/src/.vs/FieldEventManagement.slnx
-/src/FieldEventManagement.Agent/bin/Debug/net10.0
+bin/
+obj/
+.vs/
+
 /src/FieldEventManagement.Agent/LocalQueue
-/src/FieldEventManagement.Agent/obj
 /field-event-app/.vscode
 /src/FieldEventManagement.Agent/LocalPoisonQueue
-/src/FieldEventManagement.API/bin/Debug/net10.0
-/src/FieldEventManagement.API/obj
-/src/FieldEventManagement.Application/bin/Debug/net10.0
-/src/FieldEventManagement.Application/obj
-/src/FieldEventManagement.Core/obj
-/src/FieldEventManagement.Infrastructure/obj
-/src/FieldEventManagement.Infrastructure/bin/Debug/net10.0
-/src/FieldEventManagement.Core/bin/Debug/net10.0
-/src/.vs/CopilotSnapshots/960E886C11A0224A9AA06745847BEB64
-/src/.vs/CopilotSnapshots/3E2B0C541AC8E148B0F4BE657C28676C
 /src/FieldEventManagement.slnLaunch.user
-/.vs/CopilotSnapshots
 /src/FieldEventManagement.Agent/LocalDatabase
-/src/FieldEventManagement.Core.Tests/bin/Debug/net10.0
-/src/FieldEventManagement.Core.Tests/obj
-/src/FieldEventManagement.Agent.Tests/bin/Debug/net10.0
-/src/FieldEventManagement.Agent.Tests/obj

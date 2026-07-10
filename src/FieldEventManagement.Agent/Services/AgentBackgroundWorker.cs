@@ -14,6 +14,8 @@ public class AgentBackgroundWorker : BackgroundService
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AgentBackgroundWorker> _logger;
     private readonly TimeSpan _cleanupInterval;
+    private readonly TimeSpan _errorRetentionPeriod;
+    private readonly TimeSpan _completedRetentionPeriod;
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(10);
 
     public AgentBackgroundWorker(
@@ -26,8 +28,21 @@ public class AgentBackgroundWorker : BackgroundService
         _serviceProvider = serviceProvider;
         _logger = logger;
 
-        var cleanupIntervalHours = configuration.GetValue<int>("AgentSettings:ErrorCleanupIntervalHours", 24 * 7);// ברירת מחדל: שבוע
+        // פרמטר 1: כל כמה שעות לבדוק אם יש צורך בניקוי/מחיקה של רשומות ישנות.
+        // לדוגמה: 24 => בדיקה פעם ביום.
+        var cleanupIntervalHours = configuration.GetValue<int>("AgentSettings:CleanupIntervalHours", 24);
+
+        // פרמטר 2: לאחר כמה שעות ממועד היצירה, למחוק רשומות Error.
+        // לדוגמה: 168 => מחיקה לאחר 7 ימים.
+        var deleteErrorAfterHours = configuration.GetValue<int>("AgentSettings:DeleteErrorAfterHours", 24 * 7);
+
+        // פרמטר 3: לאחר כמה שעות ממועד היצירה, למחוק רשומות Completed.
+        // לדוגמה: 24 => מחיקה לאחר יום.
+        var deleteCompletedAfterHours = configuration.GetValue<int>("AgentSettings:DeleteCompletedAfterHours", 24);
+
         _cleanupInterval = TimeSpan.FromHours(Math.Max(1, cleanupIntervalHours));
+        _errorRetentionPeriod = TimeSpan.FromHours(Math.Max(1, deleteErrorAfterHours));
+        _completedRetentionPeriod = TimeSpan.FromHours(Math.Max(1, deleteCompletedAfterHours));
     }
 
     /// <summary>
@@ -59,14 +74,14 @@ public class AgentBackgroundWorker : BackgroundService
         {
             try
             {
-                var deletedCount = _eventChannel.DeleteErrorEvents();
+                var deletedCount = _eventChannel.DeleteExpiredEvents(_errorRetentionPeriod, _completedRetentionPeriod);
                 if (deletedCount > 0)
                 {
-                    _logger.LogInformation("[Engine] Weekly cleanup removed {Count} Error rows from the local database.", deletedCount);
+                    _logger.LogInformation("[Engine] Cleanup removed {Count} expired Error/Completed rows from the local database.", deletedCount);
                 }
                 else
                 {
-                    _logger.LogInformation("[Engine] Weekly cleanup completed. No Error rows were found.");
+                    _logger.LogInformation("[Engine] Cleanup completed. No expired Error/Completed rows were found.");
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

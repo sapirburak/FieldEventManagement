@@ -116,20 +116,22 @@ public class EventChannel
     }
 
     /// <summary>
-    /// מוחק את כל הרשומות שנמצאות במצב Error מהמאגר המקומי.
+    /// מוחק רשומות עם סטטוס Error או Completed שנמצאות מעל פרקי הזמן המוגדרים לכל סטטוס.
     /// </summary>
+    /// <param name="errorRetentionPeriod">פרק הזמן המינימלי לשמירת רשומות Error לפני מחיקה.</param>
+    /// <param name="completedRetentionPeriod">פרק הזמן המינימלי לשמירת רשומות Completed לפני מחיקה.</param>
     /// <returns>מספר הרשומות שנמחקו.</returns>
-    public int DeleteErrorEvents()
+    public int DeleteExpiredEvents(TimeSpan errorRetentionPeriod, TimeSpan completedRetentionPeriod)
     {
         try
         {
-            var deletedCount = _repository.DeleteErrorEvents();
-            _logger.LogInformation("[Storage] Cleanup removed {Count} Error rows from SQLite.", deletedCount);
+            var deletedCount = _repository.DeleteExpiredEvents(errorRetentionPeriod, completedRetentionPeriod);
+            _logger.LogInformation("[Storage] Cleanup removed {Count} expired Error/Completed rows from SQLite.", deletedCount);
             return deletedCount;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Storage] Failed to cleanup Error rows from SQLite.");
+            _logger.LogError(ex, "[Storage] Failed to cleanup expired Error/Completed rows from SQLite.");
             return 0;
         }
     }

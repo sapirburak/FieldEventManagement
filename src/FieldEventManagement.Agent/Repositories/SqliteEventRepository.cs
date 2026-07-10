@@ -18,6 +18,7 @@ public sealed class SqliteEventRepository : ISqliteEventRepository
     private const string DatabaseFileName = "events.db";
     private const string PendingStatus = "Pending";
     private const string ErrorStatus = "Error";
+    private const string CompletedStatus = "Completed";
 
     private readonly string _databasePath;
     private readonly ILogger<SqliteEventRepository> _logger;
@@ -185,17 +186,27 @@ public sealed class SqliteEventRepository : ISqliteEventRepository
     }
 
     /// <inheritdoc/>
-    public int DeleteErrorEvents()
+    public int DeleteExpiredEvents(TimeSpan errorRetentionPeriod, TimeSpan completedRetentionPeriod)
     {
         Initialize();
 
+        var errorCutoff = DateTime.UtcNow.Subtract(errorRetentionPeriod).ToString("O");
+        var completedCutoff = DateTime.UtcNow.Subtract(completedRetentionPeriod).ToString("O");
+
         using var connection = CreateOpenConnection();
         using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM LocalEvents WHERE Status = $status;";
-        command.Parameters.AddWithValue("$status", ErrorStatus);
+        command.CommandText = """
+            DELETE FROM LocalEvents
+            WHERE (Status = $errorStatus AND CreatedAt <= $errorCutoff)
+               OR (Status = $completedStatus AND CreatedAt <= $completedCutoff);
+            """;
+        command.Parameters.AddWithValue("$errorStatus", ErrorStatus);
+        command.Parameters.AddWithValue("$completedStatus", CompletedStatus);
+        command.Parameters.AddWithValue("$errorCutoff", errorCutoff);
+        command.Parameters.AddWithValue("$completedCutoff", completedCutoff);
 
         var deletedRows = command.ExecuteNonQuery();
-        _logger.LogInformation("[SQLite] Deleted {Count} Error rows from LocalEvents.", deletedRows);
+        _logger.LogInformation("[SQLite] Deleted {Count} expired Error/Completed rows from LocalEvents.", deletedRows);
         return deletedRows;
     }
 

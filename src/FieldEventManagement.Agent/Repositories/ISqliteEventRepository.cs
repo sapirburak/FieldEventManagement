@@ -38,8 +38,10 @@ public interface ISqliteEventRepository
     IReadOnlyList<WrappedEvent> GetPendingEvents();
 
     /// <summary>
-    /// מוחק את כל הרשומות שנמצאות במצב Error מהטבלה המקומית.
+    /// מוחק רשומות עם סטטוס Error או Completed שנמצאות מעל פרקי הזמן המוגדרים עבור כל סטטוס.
     /// </summary>
+    /// <param name="errorRetentionPeriod">פרק הזמן המינימלי לשמירת רשומות Error לפני מחיקה.</param>
+    /// <param name="completedRetentionPeriod">פרק הזמן המינימלי לשמירת רשומות Completed לפני מחיקה.</param>
     /// <returns>מספר הרשומות שנמחקו.</returns>
-    int DeleteErrorEvents();
+    int DeleteExpiredEvents(TimeSpan errorRetentionPeriod, TimeSpan completedRetentionPeriod);
 }
