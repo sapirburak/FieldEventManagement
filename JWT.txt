@@ -1,1 +1,0 @@
-המערכת משתמשת ב-Stateless Authentication מבוסס JWT. תהליך האותנטיקציה מתבצע מול SQL Server, ולאחר אימות הפרטים, ה-Infrastructure layer מנפיק טוקן חתום באמצעות Symmetric Encryption (HS256). ה-Role מוטמע כ-Claim בתוך ה-Payload של הטוקן, מה שמאפשר אכיפת הרשאות ברמת ה-API Middleware ללא צורך ב-Database lookup נוסף.
