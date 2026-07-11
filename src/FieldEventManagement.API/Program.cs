@@ -1,9 +1,8 @@
 using FieldEventManagement.Application.Services;
 using FieldEventManagement.Infrastructure.Persistence;
 using FieldEventManagement.Core.Interfaces;
-using FieldEventManagement.Infrastructure; // בשביל ה-DependencyInjection שלנו
+using FieldEventManagement.Infrastructure;
 using FieldEventManagement.Infrastructure.Notifications;
-using FieldEventManagement.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -29,8 +28,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            ValidateIssuer = true,
+            ValidIssuer = "FieldEventSystem",
+            ValidateAudience = true,
+            ValidAudience = "FieldEventSystem",
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
@@ -59,15 +60,17 @@ builder.Services.AddSignalR();
 builder.Services.AddControllers();
 
 // 1. הגדרת המדיניות (Policy)
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? ["http://localhost:4200"];
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular",
         policy => policy
-            .WithOrigins("http://localhost:4200") // הכתובת של האנגולר שלך
-            //.WithOrigins()
+            .WithOrigins(allowedOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader()
-            .AllowCredentials()); // קריטי ל-SignalR!
+            .AllowCredentials());
 });
 
 var app = builder.Build();
@@ -82,8 +85,7 @@ app.UseAuthorization();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    // פקודה זו בודקת אם ה-DB קיים, ואם לא – היא יוצרת אותו.
-    // אם ה-DB קיים, היא מריצה מיגרציות חסרות.
+    // EnsureCreated יוצר את ה-DB והסכמה אם לא קיימים — מתאים לסביבת dev ללא migrations.
     dbContext.Database.EnsureCreated();
 }
 

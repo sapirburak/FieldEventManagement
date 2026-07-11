@@ -31,16 +31,6 @@ public class JwtAuthHandler : DelegatingHandler
         _logger = logger;
     }
 
-    ///// <summary>
-    ///// Intercepts the outgoing request, ensures a valid token exists, and attaches it as a Bearer header.
-    ///// </summary>
-    //protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-    //{
-    //    var token = await GetValidTokenAsync(cancellationToken);
-    //    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-    //    return await base.SendAsync(request, cancellationToken);
-    //}
     /// <summary>
     /// Intercepts the outgoing HTTP request to inject a valid JWT Bearer token.
     /// Implements a self-healing mechanism: if the server returns a 401 Unauthorized, 
@@ -148,11 +138,20 @@ public class JwtAuthHandler : DelegatingHandler
     {
         _logger.LogInformation("Refreshing JWT token...");
 
+        var backendUrl = _configuration["AgentSettings:BackendUrl"]
+            ?? throw new InvalidOperationException("AgentSettings:BackendUrl is not configured.");
+
+        var username = _configuration["BackendAuth:Username"]
+            ?? throw new InvalidOperationException("BackendAuth:Username is not configured.");
+
+        var password = _configuration["BackendAuth:Password"]
+            ?? throw new InvalidOperationException("BackendAuth:Password is not configured.");
+
         using var authClient = _httpClientFactory.CreateClient("InsecureClient");
-        var response = await authClient.PostAsJsonAsync("https://localhost:7257/api/auth/login", new
+        var response = await authClient.PostAsJsonAsync($"{backendUrl}/api/auth/login", new
         {
-            username = _configuration["BackendAuth:Username"] ?? "sapir",
-            password = _configuration["BackendAuth:Password"] ?? "1234"
+            username,
+            password
         }, cancellationToken);
 
         response.EnsureSuccessStatusCode();

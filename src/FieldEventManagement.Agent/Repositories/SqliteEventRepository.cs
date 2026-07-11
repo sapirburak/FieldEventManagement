@@ -63,7 +63,13 @@ public sealed class SqliteEventRepository : ISqliteEventRepository
 
             using var connection = CreateOpenConnection();
             using var command = connection.CreateCommand();
+
+            // WAL ו-synchronous=NORMAL מוגדרים פעם אחת בלבד כאן – הם נשמרים ב-DB file.
+            // אין צורך לחזור עליהם בכל פתיחת connection.
             command.CommandText = """
+                PRAGMA journal_mode=WAL;
+                PRAGMA synchronous=NORMAL;
+
                 CREATE TABLE IF NOT EXISTS LocalEvents (
                     Id TEXT PRIMARY KEY,
                     Payload TEXT NOT NULL,
@@ -214,14 +220,6 @@ public sealed class SqliteEventRepository : ISqliteEventRepository
     {
         var connection = new SqliteConnection(BuildConnectionString());
         connection.Open();
-
-        using var pragmaCommand = connection.CreateCommand();
-        pragmaCommand.CommandText = "PRAGMA journal_mode=WAL;";
-        pragmaCommand.ExecuteNonQuery();
-
-        pragmaCommand.CommandText = "PRAGMA synchronous=NORMAL;";
-        pragmaCommand.ExecuteNonQuery();
-
         return connection;
     }
 

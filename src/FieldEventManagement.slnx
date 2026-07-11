@@ -1,5 +1,4 @@
 <Solution>
-  <Project Path="FieldEventManagement.Agent.Tests/FieldEventManagement.Agent.Tests.csproj" />
   <Project Path="FieldEventManagement.Agent/FieldEventManagement.Agent.csproj" Id="1bec263e-8c7b-434e-a89d-6077223b25e8" />
   <Project Path="FieldEventManagement.API/FieldEventManagement.API.csproj" Id="f99a027e-a932-42de-af1d-51c942b51e52" />
   <Project Path="FieldEventManagement.Application/FieldEventManagement.Application.csproj" Id="4201a710-6e39-4a3e-a390-cddc3c927e67" />

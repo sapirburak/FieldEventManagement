@@ -31,7 +31,7 @@ public class TokenService : ITokenService
             issuer: "FieldEventSystem",
             audience: "FieldEventSystem",
             claims: claims,
-            expires: DateTime.Now.AddDays(2), // הטוקן תקף לשעתיים
+            expires: DateTime.UtcNow.AddHours(2),
             signingCredentials: creds
         );
 
