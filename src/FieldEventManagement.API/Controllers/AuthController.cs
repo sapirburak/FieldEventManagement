@@ -22,17 +22,17 @@ namespace FieldEventManagement.API.Controllers
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginDto loginDto)
         {
-            // 1. בדיקה מול ה-DB (האם המשתמש קיים והסיסמה נכונה?)
-            // שימי לב: בחיים האמיתיים תשתמשו ב-PasswordHasher ולא תשוו סיסמה בטקסט חופשי!
+            // 1. Check against the DB (does the user exist and is the password correct?)
+            // Note: in real life use a PasswordHasher and never compare plain-text passwords!
             var user = _userRepository.GetUserByCredentials(loginDto.Username, loginDto.Password);
 
             if (user == null)
-                return Unauthorized("שם משתמש או סיסמה שגויים.");
+                return Unauthorized("Invalid username or password.");
 
-            // 2. יצירת הטוקן (הנה השלב שבו המערכת מנפיקה תעודת זהות)
+            // 2. Generate the token (this is where the system issues an identity credential)
             var token = _tokenService.GenerateToken(user.Username, user.Role);
 
-            // 3. החזרת הטוקן ללקוח (אנגולר/אייג'נט)
+            // 3. Return the token to the client (Angular / Agent)
             return Ok(new { token = token });
         }
     }

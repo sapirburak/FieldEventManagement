@@ -17,8 +17,8 @@ namespace FieldEventManagement.Infrastructure.Persistence
 
         public User? GetUserByCredentials(string username, string password)
         {
-            // כאן אנחנו מחפשים בטבלת המשתמשים ב-SQL Server
-            // ב-Production: תוודאי שאת משווה Hash ולא סיסמה בטקסט חופשי!
+            // Query the Users table in SQL Server
+            // In Production: make sure you compare a Hash and not a plain-text password!
             return _context.Users
                 .FirstOrDefault(u => u.Username == username && u.PasswordHash == password);
         }

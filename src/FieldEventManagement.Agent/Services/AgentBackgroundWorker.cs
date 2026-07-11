@@ -6,7 +6,7 @@ using System.Net;
 namespace FieldEventManagement.Agent.Services;
 
 /// <summary>
-/// מנוע רקע עצמאי (Hosted Service) המנהל את מחזור החיים של שליחת האירועים ל-Backend.
+/// Autonomous background engine (Hosted Service) that manages the lifecycle of event delivery to the Backend.
 /// </summary>
 public class AgentBackgroundWorker : BackgroundService
 {
@@ -38,16 +38,16 @@ public class AgentBackgroundWorker : BackgroundService
         _serviceProvider = serviceProvider;
         _logger = logger;
 
-        // פרמטר 1: כל כמה שעות לבדוק אם יש צורך בניקוי/מחיקה של רשומות ישנות.
-        // לדוגמה: 24 => בדיקה פעם ביום.
+        // Parameter 1: how many hours between checks for old records that need cleanup/deletion.
+        // Example: 24 => check once per day.
         var cleanupIntervalHours = configuration.GetValue<int>("AgentSettings:CleanupIntervalHours", 24);
 
-        // פרמטר 2: לאחר כמה שעות ממועד היצירה, למחוק רשומות Error.
-        // לדוגמה: 168 => מחיקה לאחר 7 ימים.
+        // Parameter 2: how many hours after creation to delete Error records.
+        // Example: 168 => delete after 7 days.
         var deleteErrorAfterHours = configuration.GetValue<int>("AgentSettings:DeleteErrorAfterHours", 24 * 7);
 
-        // פרמטר 3: לאחר כמה שעות ממועד היצירה, למחוק רשומות Completed.
-        // לדוגמה: 24 => מחיקה לאחר יום.
+        // Parameter 3: how many hours after creation to delete Completed records.
+        // Example: 24 => delete after one day.
         var deleteCompletedAfterHours = configuration.GetValue<int>("AgentSettings:DeleteCompletedAfterHours", 24);
 
         _cleanupInterval = TimeSpan.FromHours(Math.Max(1, cleanupIntervalHours));
@@ -56,7 +56,7 @@ public class AgentBackgroundWorker : BackgroundService
     }
 
     /// <summary>
-    /// מתודת הליבה - מאזינה לצינור האירועים ומזניקה עיבוד לכל אירוע שנשלף.
+    /// Core method – listens to the event pipeline and fires processing for each dequeued event.
     /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -64,12 +64,12 @@ public class AgentBackgroundWorker : BackgroundService
 
         var cleanupTask = RunCleanupLoopAsync(stoppingToken);
 
-        // לולאה אסינכרונית לא חוסמת על פני ה-Channel
+        // Non-blocking async loop over the Channel
         await foreach (var wrappedEvent in _eventChannel.ReadAllEventsAsync(stoppingToken))
         {
             _logger.LogInformation("[Engine] Processing event '{Title}' from queue.", wrappedEvent.Data.Title);
 
-            // העברת הטיפול באירוע הבודד למתודה ייעודית
+            // Delegate processing of the individual event to a dedicated method
             await ProcessSingleEventWithRetryAsync(wrappedEvent, stoppingToken);
         }
 
@@ -106,10 +106,10 @@ public class AgentBackgroundWorker : BackgroundService
     }
 
     /// <summary>
-    /// מנהלת את לולאת הניסיונות החוזרים עבור אירוע ספציפי עם Exponential Backoff.
-    /// כל כשל רצוף מגדיל את זמן ההמתנה לפי RetryDelays. הצלחה מאפסת את הספירה.
+    /// Manages the retry loop for a specific event with Exponential Backoff.
+    /// Each consecutive failure increases the wait time according to RetryDelays. A success resets the counter.
     ///
-    /// מחזור החיים של האירוע בתוך הפונקציה:
+    /// Event lifecycle inside the function:
     ///
     ///  ┌─────────────────────────────────────────────────────┐
     ///  │              ProcessSingleEventWithRetryAsync        │
@@ -122,16 +122,16 @@ public class AgentBackgroundWorker : BackgroundService
     ///  │   └──────┬──────┘                                   │
     ///  │          │                                          │
     ///  │    ┌─────┴──────────────┐                          │
-    ///  │    │ הצלחה?            │ כשל?                     │
+    ///  │    │ success?          │ failure?                  │
     ///  │    ▼                   ▼                           │
     ///  │  isResolved=true   attemptIndex++                  │
     ///  │  attemptIndex=0    delay = RetryDelays[min(idx,3)] │
-    ///  │  יציאה מהלולאה    await Task.Delay(delay)         │
-    ///  │                    חזרה לתחילת הלולאה             │
+    ///  │  exit loop         await Task.Delay(delay)         │
+    ///  │                    loop back to start              │
     ///  └─────────────────────────────────────────────────────┘
     ///
-    /// לוח זמנים:
-    ///   כשל 1 → 10s | כשל 2 → 30s | כשל 3 → 60s | כשל 4+ → 5min (גג)
+    /// Timing schedule:
+    ///   failure 1 → 10s | failure 2 → 30s | failure 3 → 60s | failure 4+ → 5min (cap)
     /// </summary>
     private async Task ProcessSingleEventWithRetryAsync(WrappedEvent wrappedEvent, CancellationToken stoppingToken)
     {
@@ -175,36 +175,36 @@ public class AgentBackgroundWorker : BackgroundService
     /// מבצעת את פניית ה-HTTP בפועל ומנתחת את הסטטוס החוזר (הצלחה, שגיאת רשת, או הודעת שגיאה).
     /// מחזירה true אם האירוע "נפתר" (נשלח או סומן כ-Error) וניתן להמשיך הלאה, או false אם יש לנסות שוב.
     /// </summary>
-    // מתוך מתודת TrySendEventAsync בתוך AgentBackgroundWorker.cs
+    // From the TrySendEventAsync method inside AgentBackgroundWorker.cs
 
     private async Task<bool> TrySendEventAsync(WrappedEvent wrappedEvent, CancellationToken stoppingToken)
     {
         using var scope = _serviceProvider.CreateScope();
         var backendClient = scope.ServiceProvider.GetRequiredService<IBackendClient>();
 
-        // מעבירים את ה-wrappedEvent המלא (כולל ה-Id מ-SQLite) כדי לשמר Idempotency.
+        // Pass the full wrappedEvent (including the SQLite Id) to preserve Idempotency.
         var response = await backendClient.SendEventToBackendAsync(wrappedEvent, stoppingToken);
 
-        // תרחיש א': הצלחה מלאה
+        // Scenario A: full success
         if (response.IsSuccess)
         {
             _eventChannel.ConfirmDelivery(wrappedEvent.Id);
             return true;
         }
 
-        // תרחיש ב': הודעת רעל / הודעה שגויה מבחינה לוגית (השרת עובד אך דחה את התוכן)
+        // Scenario B: poison message / logically invalid message (server is working but rejected the content)
         if (response.StatusCode == HttpStatusCode.BadRequest ||
             response.StatusCode == HttpStatusCode.UnprocessableEntity)
         {
             _logger.LogError("[Engine] Error response detected (Status {Code})! Marking event {Id} as Error.", response.StatusCode, wrappedEvent.Id);
 
             _eventChannel.MoveToError(wrappedEvent.Id);
-            return true; // נפתר (הוסר מהתור), ניתן להמשיך להודעה הבאה
+            return true; // resolved (removed from queue), can proceed to the next message
         }
 
-        // תרחיש ג': שגיאות שרת זמניות (למשל 500 Internal Server Error או 429 Too Many Requests)
+        // Scenario C: transient server errors (e.g. 500 Internal Server Error or 429 Too Many Requests)
         _logger.LogWarning("[Engine] Server returned temporary error {Code}. Suspecting transient issue. Will retry.", response.StatusCode);
-        return false; // לא נפתר, הלולאה תמתין ותנסה שוב
+        return false; // not resolved, the loop will wait and retry
 
     }
 }

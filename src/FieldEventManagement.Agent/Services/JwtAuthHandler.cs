@@ -15,7 +15,7 @@ public class JwtAuthHandler : DelegatingHandler
     private readonly IConfiguration _configuration;
     private readonly ILogger<JwtAuthHandler> _logger;
 
-    // סמפור להבטחת בטיחות בתהליכים מקביליים (Thread-safety)
+    // Semaphore for ensuring thread-safety in concurrent scenarios
     private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
     private string? _cachedToken;
@@ -86,14 +86,14 @@ public class JwtAuthHandler : DelegatingHandler
     /// </summary>
     private async Task<string> GetValidTokenAsync(CancellationToken cancellationToken)
     {
-        // בדיקה מהירה: האם הטוקן כבר קיים ותקין? (ללא צורך בנעילה)
+        // Fast check: is the token already present and valid? (no lock required)
         if (IsTokenValid()) return _cachedToken!;
 
-        // אם לא, נכנסים לנעילה כדי למנוע ריבוי קריאות Login בו-זמנית
+        // If not, acquire the lock to prevent multiple simultaneous Login calls
         await _semaphore.WaitAsync(cancellationToken);
         try
         {
-            // בדיקה כפולה אחרי הנעילה (Double-check locking pattern)
+            // Double-check after acquiring the lock (Double-check locking pattern)
             if (IsTokenValid()) return _cachedToken!;
 
             return await RefreshTokenAsync(cancellationToken);
@@ -114,7 +114,7 @@ public class JwtAuthHandler : DelegatingHandler
         {
             Version = request.Version,
             VersionPolicy = request.VersionPolicy,
-            Content = request.Content // הערה: אם ה-Content הוא Stream, ייתכן שתצטרך לבצע לו Seek ל-0
+            Content = request.Content // Note: if Content is a Stream, you may need to Seek it back to position 0
         };
 
         foreach (var header in request.Headers)
@@ -177,7 +177,7 @@ public class JwtAuthHandler : DelegatingHandler
 
             if (exp != null && long.TryParse(exp, out var seconds))
             {
-                // המרה מפורמט Unix ל-DateTime וקיזוז Buffer של 5 דקות
+                // Convert from Unix format to DateTime with a 5-minute buffer offset
                 return DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime.AddMinutes(-5);
             }
         }
@@ -186,6 +186,6 @@ public class JwtAuthHandler : DelegatingHandler
             _logger.LogWarning(ex, "Failed to parse token expiry, using default fallback.");
         }
 
-        return DateTime.UtcNow.AddMinutes(55); // Fallback במידה ופענוח נכשל
+        return DateTime.UtcNow.AddMinutes(55); // Fallback if parsing fails
     }
 }

@@ -1,18 +1,18 @@
 <div class="login-container">
-  <h2>התחברות למערכת</h2>
+  <h2>System Login</h2>
   
   <form (ngSubmit)="onLogin()">
     <div>
-      <label>שם משתמש:</label>
+      <label>Username:</label>
       <input [(ngModel)]="credentials.username" name="username" required>
     </div>
     
     <div>
-      <label>סיסמה:</label>
+      <label>Password:</label>
       <input type="password" [(ngModel)]="credentials.password" name="password" required>
     </div>
 
-    <button type="button" (click)="onLogin()">התחבר</button>
+    <button type="button" (click)="onLogin()">Login</button>
   </form>
 
   <p *ngIf="errorMessage" style="color: red;">{{ errorMessage }}</p>

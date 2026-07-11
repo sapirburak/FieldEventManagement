@@ -2,7 +2,7 @@
 namespace FieldEventManagement.Agent.Models;
 
 /// <summary>
-/// אובייקט העברת הנתונים של אירוע שטח כפי שמתקבל ממקורות חיצוניים
+/// Data Transfer Object for a field event as received from external sources.
 /// </summary>
 public record FieldEventDto(
     string Title,
@@ -13,6 +13,6 @@ public record FieldEventDto(
 );
 
 /// <summary>
-/// אובייקט עזר פנימי המוסיף מזהה ייחודי (GUID) לצורך ניהול קבצי גיבוי מקומיים בדיסק
-/// </summary>WrappedEvent
+/// Internal helper object that adds a unique identifier (GUID) for managing local backup files on disk.
+/// </summary>
 public record WrappedEvent(Guid Id, FieldEventDto Data);

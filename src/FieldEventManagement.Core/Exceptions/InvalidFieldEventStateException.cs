@@ -1,14 +1,14 @@
 namespace FieldEventManagement.Core.Exceptions;
 
 /// <summary>
-/// מציין כי ניסוי לבצע מעבר מצב לא חוקי על אובייקט FieldEvent.
+/// Indicates that an attempt was made to perform an invalid state transition on a FieldEvent object.
 /// </summary>
 public sealed class InvalidFieldEventStateException : Exception
 {
     /// <summary>
-    /// מאתחל חריגה חדשה עם הודעה מותאמת.
+    /// Initializes a new exception with a custom message.
     /// </summary>
-    /// <param name="message">הודעת השגיאה.</param>
+    /// <param name="message">The error message.</param>
     public InvalidFieldEventStateException(string message)
         : base(message)
     {

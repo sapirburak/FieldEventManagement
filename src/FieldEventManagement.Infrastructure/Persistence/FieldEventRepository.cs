@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FieldEventManagement.Infrastructure.Persistence;
 /// <summary>
-/// מימוש קונקרטי של ה-IFieldEventRepository.
-/// אחראי על כל פעולות ה-CRUD מול ה-DbContext. 
-/// מחלקה זו מבודדת את שכבת ה-Application מהפרטים הטכניים של Entity Framework Core.
+/// Concrete implementation of IFieldEventRepository.
+/// Responsible for all CRUD operations against the DbContext.
+/// This class isolates the Application layer from the technical details of Entity Framework Core.
 /// </summary>
 public class FieldEventRepository : IFieldEventRepository
 {
@@ -15,19 +15,19 @@ public class FieldEventRepository : IFieldEventRepository
     public FieldEventRepository(ApplicationDbContext context) => _context = context;
   
     /// <summary>
-    /// בודק קיום אירוע בבסיס הנתונים באמצעות מזהה ייחודי. 
-    /// חיוני להבטחת עקביות (Idempotency) בעת קליטת הודעות מה-Agent.
+    /// Checks whether an event exists in the database by unique identifier.
+    /// Critical for ensuring Idempotency when receiving messages from the Agent.
     /// </summary>
     public async Task<bool> ExistsAsync(Guid id) =>
         await _context.FieldEvents.AnyAsync(e => e.Id == id);
 
     /// <summary>
-    /// שולף אירוע כולל היסטוריית המצבים (Include) שנדרשת ל-State Machine.
-    /// Include הכרחי כאן כי ה-History הוא private collection שלא נטען אוטומטית.
+    /// Fetches an event including its status history (Include) required by the State Machine.
+    /// Include is necessary here because History is a private collection that is not loaded automatically.
     /// </summary>
     public async Task<FieldEvent?> GetByIdAsync(Guid id) =>
         await _context.FieldEvents
-            .Include("_history") // שם השדה הפנימי – נדרש כי ה-collection הוא private
+            .Include("_history") // Internal field name – required because the collection is private
             .FirstOrDefaultAsync(e => e.Id == id);
 
     public async Task AddAsync(FieldEvent fieldEvent) =>

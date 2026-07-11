@@ -14,14 +14,14 @@ export class SignalRService {
     public eventReceived = new BehaviorSubject<FieldEvent | null>(null);
 
     constructor(@Inject(PLATFORM_ID) private platformId: Object) {
-        // אין קריאה לחיבור כאן. החיבור נפתח רק לאחר login מוצלח.
-        // ראה startConnection() למטה.
+        // No connection is started here. The connection opens only after a successful login.
+        // See startConnection() below.
     }
 
     /**
-     * נקרא פעם אחת אחרי login מוצלח.
-     * accessTokenFactory היא פונקציה שנקראת מחדש בכל reconnect –
-     * כך הtoken תמיד עדכני ולא מוקפא מרגע האתחול.
+     * Called once after a successful login.
+     * accessTokenFactory is a function re-invoked on every reconnect –
+     * ensuring the token is always fresh and not frozen from initialization time.
      */
     public startConnection(): void {
         if (!isPlatformBrowser(this.platformId) || this.connectionStarted) {
@@ -32,8 +32,8 @@ export class SignalRService {
 
         this.hubConnection = new signalR.HubConnectionBuilder()
             .withUrl('https://localhost:7257/eventHub', {
-                // קריאה ל-localStorage בכל פעם מחדש (לא מקפיאים את הtoken).
-                // חשוב גם ל-reconnect: אם הtoken התחלף, החיבור יחודש עם הtoken הנכון.
+                // Read from localStorage each time (token is never frozen).
+                // Important for reconnect: if the token changes, the connection resumes with the correct token.
                 accessTokenFactory: () => localStorage.getItem('access_token') ?? ''
             })
             .withAutomaticReconnect()

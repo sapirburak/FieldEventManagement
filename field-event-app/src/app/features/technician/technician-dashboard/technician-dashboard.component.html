@@ -1,6 +1,6 @@
 <div class="tech-view">
 
-  <!-- ══ Section 1: אירועים המוקצים לטכנאי ══ -->
+  <!-- ══ Section 1: Events assigned to the technician ══ -->
   <section>
     <h1>My Assigned Events</h1>
 
@@ -15,7 +15,7 @@
         <p>📍 {{ event.location }}</p>
         <span class="badge">{{ event.status }}</span>
 
-        <!-- כפתורי מעבר מצב – מוצגים רק אם המעבר חוקי לפי ה-State Machine -->
+        <!-- Status transition buttons – shown only if the transition is valid per the State Machine -->
         @if (event.status === EventStatus.Assigned) {
           <button (click)="onUpdateStatus(event, EventStatus.InProgress)">
             Start Working
@@ -27,7 +27,7 @@
           </button>
         }
 
-        <!-- שליחת הערה לסדרן -->
+        <!-- Send a note to the scheduler -->
         <div class="note-section">
           <input
             type="text"
@@ -43,7 +43,7 @@
     }
   </section>
 
-  <!-- ══ Section 2: אירועים פנויים לבקשה ══ -->
+  <!-- ══ Section 2: Available events to request ══ -->
   <section>
     <h2>Available Events</h2>
 

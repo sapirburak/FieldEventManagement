@@ -14,25 +14,25 @@ import { EventStatus, FieldEvent } from '../../../data/models/field-event.model'
 export class TechnicianDashboardComponent {
   private facade = inject(EventFacade);
 
-  // TODO: לחלץ את ה-technicianId מתוך ה-JWT (AuthService.getCurrentUserId()).
+  // TODO: extract technicianId from the JWT (AuthService.getCurrentUserId()).
   private technicianId = 'current-technician-id';
 
-  // חשיפת ה-enum ל-template כדי שניתן להשתמש בו בהשוואות
+  // Expose the enum to the template so it can be used in comparisons
   protected EventStatus = EventStatus;
 
-  // אירועים המוקצים לטכנאי הנוכחי – פילטר אמיתי לפי assignedTechnicianId
+  // Events assigned to the current technician – real filter by assignedTechnicianId
   protected myEvents = computed(() =>
     this.facade.activeEvents().filter(e => e.assignedTechnicianId === this.technicianId)
   );
 
-  // אירועים פנויים שהטכנאי יכול לבקש לקבל על עצמו
+  // Unassigned events that the technician can request to claim
   protected unassignedEvents = computed(() =>
     this.facade.activeEvents().filter(e => e.status === EventStatus.Unassigned)
   );
 
   protected noteText = signal('');
 
-  // Spec: "יכול לעדכן סטטוס אירוע (מעבר בין מצבים מוגדרים)"
+  // Spec: "can update event status (transition between defined states)"
   onUpdateStatus(event: FieldEvent, nextStatus: EventStatus): void {
     try {
       this.facade.updateStatus(event, nextStatus);
@@ -41,13 +41,13 @@ export class TechnicianDashboardComponent {
     }
   }
 
-  // Spec: "יכול לשלוח הערה / עדכון לסדרן על אירוע פעיל"
+  // Spec: "can send a note / update to the scheduler on an active event"
   onSendNote(eventId: string): void {
     this.facade.sendNote(eventId, this.noteText());
     this.noteText.set('');
   }
 
-  // Spec: "יכול לשלוח בקשה לקבל על עצמו אירוע פנוי"
+  // Spec: "can send a request to claim an unassigned event"
   onRequestEvent(eventId: string): void {
     this.facade.requestEvent(eventId);
   }

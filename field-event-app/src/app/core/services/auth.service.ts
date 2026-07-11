@@ -11,7 +11,7 @@ export class AuthService {
   login(credentials: any) {
     return this.http.post<{token: string}>(this.apiUrl, credentials).pipe(
       tap(response => {
-        // שמירת הטוקן ב-LocalStorage
+        // Store the token in LocalStorage
         localStorage.setItem('access_token', response.token);
       })
     );

@@ -10,7 +10,7 @@
   text-align: center;
 }
 
-/* רשימת האירועים כ-Grid */
+/* Event list as a Grid */
 .event-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -19,7 +19,7 @@
   margin: 0 auto;
 }
 
-/* עיצוב כרטיס אירוע */
+/* Event card styling */
 .event-card {
   background: white;
   padding: 1.5rem;
@@ -46,11 +46,11 @@
   line-height: 1.5;
 }
 
-/* עיצוב כפתור השיוך */
+/* Assign button styling */
 .event-card button {
   width: 100%;
   padding: 0.6rem;
-  background-color: #27ae60; /* ירוק נעים לפעולות חיוביות */
+  background-color: #27ae60; /* Pleasant green for positive actions */
   color: white;
   border: none;
   border-radius: 6px;
@@ -64,7 +64,7 @@
   background-color: #219150;
 }
 
-/* הודעה במקרה שאין אירועים */
+/* Message displayed when there are no events */
 .event-list > p {
   grid-column: 1 / -1;
   text-align: center;

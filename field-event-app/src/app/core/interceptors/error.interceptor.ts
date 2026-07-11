@@ -2,24 +2,24 @@ import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { catchError, throwError } from 'rxjs';
 
 /**
- * Interceptor גלובלי לטיפול בשגיאות HTTP.
- * תפקידו לתפוס שגיאות ברמת הרשת/שרת ולבצע פעולות אחידות (כמו לוגינג או הצגת התראות).
+ * Global interceptor for handling HTTP errors.
+ * Its role is to catch network/server-level errors and perform uniform actions (e.g. logging or showing notifications).
  */
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       let errorMessage = 'An unknown error occurred!';
 
-      // ניתוח סוג השגיאה
+      // Determine the type of error
       if (error.error instanceof ErrorEvent) {
-        // שגיאת צד לקוח (למשל בעיית רשת בסיסית)
+        // Client-side error (e.g. basic network issue)
         errorMessage = `Client Error: ${error.error.message}`;
       } else {
-        // שגיאת צד שרת (למשל 401, 403, 500)
+        // Server-side error (e.g. 401, 403, 500)
         switch (error.status) {
           case 401:
             errorMessage = 'Session expired. Please login again.';
-            // כאן נוכל להפעיל AuthService כדי לנתב לעמוד התחברות
+            // Here we could invoke AuthService to navigate to the login page
             break;
           case 403:
             errorMessage = 'Access denied.';
@@ -34,7 +34,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
       console.error('Global Error Caught:', errorMessage);
       
-      // כאן נוכל להוסיף שירות Notifications להצגת הודעה יפה למשתמש
+      // Here we could add a Notifications service to display a user-friendly message
       // alert(errorMessage); 
 
       return throwError(() => new Error(errorMessage));

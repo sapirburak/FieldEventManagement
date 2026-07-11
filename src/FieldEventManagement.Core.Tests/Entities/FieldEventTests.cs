@@ -64,7 +64,7 @@ public class FieldEventTests
 
         var exception = Assert.Throws<InvalidFieldEventStateException>(() => fieldEvent.TransitionTo(nextStatus, "dispatcher-1"));
 
-        Assert.Contains("מעבר מצב לא חוקי", exception.Message);
+        Assert.Contains("Invalid state transition", exception.Message);
         Assert.Equal(currentStatus, fieldEvent.Status);
         Assert.Single(fieldEvent.History);
     }
@@ -77,7 +77,7 @@ public class FieldEventTests
 
         var exception = Assert.Throws<InvalidFieldEventStateException>(() => fieldEvent.TransitionTo(EventStatus.Cancelled, "technician-1", "Technician"));
 
-        Assert.Equal("ביטול אירוע מותר רק למשתמש עם תפקיד Dispatcher.", exception.Message);
+        Assert.Equal("Cancelling an event is only permitted for users with the Dispatcher role.", exception.Message);
         Assert.Equal(EventStatus.Assigned, fieldEvent.Status);
         Assert.Single(fieldEvent.History);
     }

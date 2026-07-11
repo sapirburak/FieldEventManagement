@@ -10,17 +10,17 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. רישום שירותי התשתית (DB ו-SignalR)
+// 1. Register infrastructure services (DB and SignalR)
 builder.Services.AddInfrastructure(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
 
-// 2. רישום שירותי ה-Application
+// 2. Register Application services
 builder.Services.AddScoped<EventReceiverService>();
 builder.Services.AddScoped<TechnicianEventService>();
-// 1. רישום שירות הטוקנים (Infrastructure)
+// Register the token service (Infrastructure)
 builder.Services.AddScoped<ITokenService, TokenService>();
 
-// 2. הגדרת האוטנטיקציה (כפי שראינו קודם)
+// Configure authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -36,9 +36,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero
         };
 
-        // SignalR אינו יכול לשלוח Authorization header ב-WebSocket.
-        // הפתרון הסטנדרטי: ה-client מעביר את הtoken ב-query string (?access_token=...).
-        // ה-event הזה קורא אותו ומכניס אותו לcontext כך שהאימות הרגיל יפעל.
+        // SignalR cannot send an Authorization header over WebSocket.
+        // Standard solution: the client passes the token in the query string (?access_token=...).
+        // This event reads it and injects it into the context so that normal authentication applies.
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -55,11 +55,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
-// 3. רישום SignalR
+// 3. Register SignalR
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
 
-// 1. הגדרת המדיניות (Policy)
+// Configure the CORS policy
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? ["http://localhost:4200"];
 
@@ -75,9 +75,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// UseCors חייב להיות לפני UseAuthentication ו-UseAuthorization.
-// בקשות Preflight (OPTIONS) עוברות דרך CORS לפני שמתבצע אימות,
-// אחרת הדפדפן מקבל שגיאת CORS במקום 401 ברור.
+// UseCors must come before UseAuthentication and UseAuthorization.
+// Preflight (OPTIONS) requests go through CORS before authentication occurs;
+// otherwise the browser receives a CORS error instead of a clear 401.
 app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
@@ -85,13 +85,13 @@ app.UseAuthorization();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    // EnsureCreated יוצר את ה-DB והסכמה אם לא קיימים — מתאים לסביבת dev ללא migrations.
+    // EnsureCreated creates the DB and schema if they don't exist — suitable for dev without migrations.
     dbContext.Database.EnsureCreated();
 }
 
 
 app.MapControllers();
-// הגדרת ה-Hub של SignalR שהוגדר ב-Infrastructure
+// Map the SignalR Hub defined in Infrastructure
 app.MapHub<EventHub>("/EventHub");
 
 app.Run();

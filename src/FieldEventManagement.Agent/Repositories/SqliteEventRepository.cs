@@ -9,8 +9,8 @@ using System.Text.Unicode;
 namespace FieldEventManagement.Agent.Repositories;
 
 /// <summary>
-/// יישום מאגר האירועים המקומי באמצעות SQLite בטוחה, מהירה וקלה לתחזוקה.
-/// משלב קוד SQL גולמי עם הגדרות PRAGMA אופטימליות למטען גבוה על גבי Agent אופליין.
+/// Implementation of the local event repository using SQLite – safe, fast, and easy to maintain.
+/// Combines raw SQL with optimal PRAGMA settings for high load on an offline Agent.
 /// </summary>
 public sealed class SqliteEventRepository : ISqliteEventRepository
 {
@@ -27,10 +27,10 @@ public sealed class SqliteEventRepository : ISqliteEventRepository
     private bool _initialized;
 
     /// <summary>
-    /// מאתחל מופע חדש של מחלקת <see cref="SqliteEventRepository"/>.
+    /// Initializes a new instance of <see cref="SqliteEventRepository"/>.
     /// </summary>
-    /// <param name="env">סביבת הריצה שמספקת את נתיב התיקייה הראשית של האפליקציה.</param>
-    /// <param name="logger">רכיב הרישום של המערכת.</param>
+    /// <param name="env">The runtime environment providing the application's root directory path.</param>
+    /// <param name="logger">The system logging component.</param>
     public SqliteEventRepository(IHostEnvironment env, ILogger<SqliteEventRepository> logger)
     {
         _databasePath = Path.Combine(env.ContentRootPath, DatabaseDirectoryName, DatabaseFileName);
@@ -64,8 +64,8 @@ public sealed class SqliteEventRepository : ISqliteEventRepository
             using var connection = CreateOpenConnection();
             using var command = connection.CreateCommand();
 
-            // WAL ו-synchronous=NORMAL מוגדרים פעם אחת בלבד כאן – הם נשמרים ב-DB file.
-            // אין צורך לחזור עליהם בכל פתיחת connection.
+            // WAL and synchronous=NORMAL are set once here – they are persisted in the DB file.
+            // There is no need to repeat them on every connection open.
             command.CommandText = """
                 PRAGMA journal_mode=WAL;
                 PRAGMA synchronous=NORMAL;

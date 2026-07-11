@@ -4,25 +4,25 @@ import { EventStatus, FieldEvent } from '../../data/models/field-event.model';
 import { EventStateMachine } from '../logic/event-state-machine';
 
 /**
- * Facade המהווה נקודת כניסה יחידה (Single Entry Point) לכל הלוגיקה העסקית 
- * הקשורה לאירועי שטח. מסתיר את ה-Store וה-Service מהקומפוננטות.
+ * Facade that serves as the Single Entry Point for all business logic
+ * related to field events. Hides the Store and Service from components.
  */
 @Injectable({ providedIn: 'root' })
 export class EventFacade {
 
     constructor(private store: EventStore) { }
 
-    /** חשיפת האירועים הפעילים בלבד עבור ה-UI */
+    /** Exposes only active events to the UI */
     public activeEvents = this.store.activeEvents;
 
     /**
-     * פעולה עסקית: הקצאת אירוע לטכנאי.
-     * @param eventId המזהה של האירוע
-     * @param technicianId המזהה של הטכנאי
+     * Business action: assign an event to a technician.
+     * @param eventId The event identifier
+     * @param technicianId The technician identifier
      */
     public assignEvent(eventId: string, technicianId: string): void {
         console.log(`Assigning event ${eventId} to technician ${technicianId}`);
-        // כאן בעתיד נקרא ל-ApiService.assignEvent(...)
+        // TODO: call ApiService.assignEvent(...) here
     }
 
     /**
@@ -40,7 +40,7 @@ export class EventFacade {
 
     /**
      * Sends a free-text note from the technician to the scheduler.
-     * Spec: "יכול לשלוח הערה / עדכון לסדרן על אירוע פעיל"
+        * Spec: "can send a note / update to the scheduler on an active event"
      * TODO: inject HttpClient and call POST /api/technician/events/{id}/notes
      */
     public sendNote(eventId: string, note: string): void {
@@ -51,7 +51,7 @@ export class EventFacade {
 
     /**
      * Technician requests to claim an unassigned event.
-     * Spec: "יכול לשלוח בקשה לקבל על עצמו אירוע פנוי"
+        * Spec: "can send a request to claim an unassigned event"
      * TODO: inject HttpClient and call POST /api/technician/events/{id}/request
      */
     public requestEvent(eventId: string): void {

@@ -1,5 +1,5 @@
 .tech-view {
-  max-width: 600px; /* רשימה צרה יותר נוחה לעבודה של טכנאי */
+  max-width: 600px; /* Narrower list is more practical for a technician's workflow */
   margin: 2rem auto;
   padding: 0 1rem;
 }
@@ -11,7 +11,7 @@
   padding-bottom: 0.5rem;
 }
 
-/* כרטיס בודד בעיצוב שורה */
+/* Single card in row layout */
 .tech-view .event-card {
   display: flex;
   justify-content: space-between;
@@ -20,7 +20,7 @@
   padding: 1rem 1.5rem;
   margin-bottom: 1rem;
   border-radius: 8px;
-  border-right: 5px solid #4A90E2; /* פס צבעוני בצד שנותן עומק */
+  border-right: 5px solid #4A90E2; /* Colored side stripe for visual depth */
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
@@ -30,7 +30,7 @@
   font-size: 1.1rem;
 }
 
-/* עיצוב כפתור עדכון סטטוס */
+/* Status update button styling */
 .tech-view .event-card button {
   padding: 0.5rem 1rem;
   background-color: #f8f9fa;

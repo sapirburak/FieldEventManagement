@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace FieldEventManagement.Infrastructure.Notifications;
 /// <summary>
-/// שירות לניהול תקשורת דו-כיוונית בזמן אמת מול הסדרנים.
-/// מתרגם קריאות עסקיות של ה-Application לשידורי (Broadcast) SignalR.
+/// Service for managing real-time bidirectional communication with dispatchers.
+/// Translates Application business calls into SignalR broadcasts.
 /// </summary>
 public class RealTimeNotificationService : IRealTimeNotificationService
 {
@@ -14,7 +14,7 @@ public class RealTimeNotificationService : IRealTimeNotificationService
     public RealTimeNotificationService(IHubContext<EventHub> hubContext) => _hubContext = hubContext;
 
     /// <summary>
-    /// שולח לכל הסדרנים המחוברים על אירוע חדש שהגיע מה-Agent.
+    /// Notifies all connected dispatchers about a new event received from the Agent.
     /// </summary>
     public async Task NotifyDispatcherOfNewEventAsync(Guid eventId, string title, string location)
     {
@@ -28,7 +28,7 @@ public class RealTimeNotificationService : IRealTimeNotificationService
     }
 
     /// <summary>
-    /// שולח לכל הסדרנים שטכנאי עדכן סטטוס על אירוע פעיל.
+    /// Notifies all dispatchers that a technician updated the status of an active event.
     /// Angular event: "ReceiveStatusUpdate"
     /// </summary>
     public async Task NotifySchedulerOfStatusUpdateAsync(Guid eventId, string newStatus, string technicianId)
@@ -43,7 +43,7 @@ public class RealTimeNotificationService : IRealTimeNotificationService
     }
 
     /// <summary>
-    /// שולח לכל הסדרנים שטכנאי הוסיף הערה על אירוע.
+    /// Notifies all dispatchers that a technician added a note on an event.
     /// Angular event: "ReceiveNote"
     /// </summary>
     public async Task NotifySchedulerOfNoteAsync(Guid eventId, string note, string technicianId)
@@ -58,13 +58,13 @@ public class RealTimeNotificationService : IRealTimeNotificationService
     }
 
     /// <summary>
-    /// TODO: לממש לאחר שנוסיף ניהול ConnectionId לכל טכנאי.
-    /// כרגע שולח לכל הסדרנים כ-fallback.
-    /// בפרודקשן: נשלח ישירות לטכנאי לפי ConnectionId שמור.
+    /// TODO: implement after adding ConnectionId management per technician.
+    /// Currently sends to all dispatchers as a fallback.
+    /// In production: send directly to the technician by stored ConnectionId.
     /// </summary>
     public async Task NotifyTechnicianOfAssignmentAsync(Guid eventId, string technicianId, string title)
     {
-        // TODO: החלף בשליחה ישירה לConnectionId של הטכנאי
+        // TODO: replace with direct send to the technician's ConnectionId
         await _hubContext.Clients.Group("Schedulers").SendAsync("ReceiveAssignment", new
         {
             eventId,
@@ -75,17 +75,17 @@ public class RealTimeNotificationService : IRealTimeNotificationService
     }
 }
 /// <summary>
-/// ה-Hub של SignalR. מחלקה זו משמשת כנקודת הקצה לתקשורת בזמן אמת.
-/// [Authorize] ברמת ה-Hub מבטיח שחיבור WebSocket מחייב JWT תקין.
-/// ללא זה, כל אחד יכול להתחבר ולהאזין לאירועים.
+/// The SignalR Hub. This class serves as the endpoint for real-time communication.
+/// [Authorize] at the Hub level ensures that a WebSocket connection requires a valid JWT.
+/// Without this, anyone could connect and listen to events.
 /// </summary>
 [Authorize]
 public class EventHub : Hub
 {
     /// <summary>
-    /// מצרף את הלקוח לקבוצת הסדרנים לקבלת התראות.
-    /// [Authorize(Roles = "Scheduler")] מבטיח שרק סדרנים יכולים להצטרף לקבוצה זו.
-    /// שם התפקיד "Scheduler" מתאים לערך ה-Role בטבלת Users ב-DB.
+    /// Adds the client to the Schedulers group to receive notifications.
+    /// [Authorize(Roles = "Scheduler")] ensures only dispatchers can join this group.
+    /// The role name "Scheduler" matches the Role value in the Users table in the DB.
     /// </summary>
     [Authorize(Roles = "Scheduler")]
     public async Task JoinSchedulerGroup()

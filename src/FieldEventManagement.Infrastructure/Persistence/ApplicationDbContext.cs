@@ -3,8 +3,8 @@ using FieldEventManagement.Core.Entities;
 
 namespace FieldEventManagement.Infrastructure.Persistence;
 /// <summary>
-/// מייצג את ה-Session מול מסד הנתונים.
-/// אחראי על מיפוי הישויות מה-Domain לטבלאות SQL ועל ניהול הטרנזקציות.
+/// Represents the session against the database.
+/// Responsible for mapping Domain entities to SQL tables and managing transactions.
 /// </summary>
 public class ApplicationDbContext : DbContext
 {
@@ -12,28 +12,28 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<FieldEvent> FieldEvents { get; set; }
     public DbSet<User> Users { get; set; }  
-    // הערה: EF Core יודע למפות את ה-List הפנימי ב-FieldEvent אוטומטית אם נגדיר זאת נכון, 
-    // או שניתן להוסיף DbSet ל-EventStateHistory אם נרצה גישה ישירה.
+    // Note: EF Core can map the internal List in FieldEvent automatically if configured correctly,
+    // or a DbSet for EventStateHistory can be added for direct access.
     /// <summary>
-    /// מגדיר את הקשרים (Relationships) ואת אילוצי הטבלאות (Constraints) ב-SQL Server.
-    /// משתמש ב-Fluent API למיפוי מדויק של הישויות.
+    /// Configures the Relationships and table Constraints in SQL Server.
+    /// Uses the Fluent API for precise entity mapping.
     /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // הגדרת Entity ל-FieldEvent
+        // Configure the FieldEvent entity
         modelBuilder.Entity<FieldEvent>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
 
-            // מיפוי ה-History (אוסף פנימי)
+            // Map the History (internal collection)
             entity.Metadata.FindNavigation(nameof(FieldEvent.History))?
                   .SetPropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // הגדרת Entity ל-EventStateHistory
+        // Configure the EventStateHistory entity
         modelBuilder.Entity<EventStateHistory>(entity =>
         {
             entity.HasKey(h => h.Id);

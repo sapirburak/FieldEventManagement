@@ -7,34 +7,34 @@ using System.Threading.Channels;
 namespace FieldEventManagement.Agent.Services;
 
 /// <summary>
-/// מנהל את ערוץ האירועים המקומי של ה-Agent.
-/// משמש כרכיב תיווך (Buffer) חכם המשלב תור מהיר בזיכרון (In-Memory Channel)
-/// יחד עם מנגנון עמידות חסין אובדן מידע בדיסק (Disk Persistence).
+/// Manages the Agent's local event channel.
+/// Acts as a smart Buffer component that combines a fast in-memory queue (In-Memory Channel)
+/// with a loss-proof disk persistence mechanism (Disk Persistence).
 /// </summary>
 public class EventChannel
 {
     /// <summary>
-    /// צינור אסינכרוני מובנה ב-.NET לניהול תור ההודעות בזיכרון בצורה בטוחה (Thread-Safe).
+    /// Built-in .NET async pipeline for managing the in-memory message queue in a Thread-Safe manner.
     /// </summary>
     private readonly Channel<WrappedEvent> _channel;
 
     /// <summary>
-    /// מאגר האירועים המקומי המבוסס על SQLite.
+    /// Local event repository backed by SQLite.
     /// </summary>
     private readonly ISqliteEventRepository _repository;
 
     /// <summary>
-    /// רכיב הרישום של המערכת לתיעוד אירועים, אזהרות ושגיאות בזמן ריצה.
+    /// System logging component for recording events, warnings, and errors at runtime.
     /// </summary>
     private readonly ILogger<EventChannel> _logger;
 
     /// <summary>
-    /// מאתחל מופע חדש של מחלקת <see cref="EventChannel"/>.
-    /// מקים את תיקיות הדיסק הנדרשות, מגדיר את אופטימיזציית הצינור בזיכרון ומפעיל שחזור קבצים אוטומטי.
+    /// Initializes a new instance of <see cref="EventChannel"/>.
+    /// Sets up required disk directories, configures the in-memory pipeline optimization, and triggers automatic file recovery.
     /// </summary>
-    /// <param name="configuration">ממשק גישה להגדרות האפליקציה (appsettings.json).</param>
-    /// <param name="repository">מאגר האירועים המקומי עבור שמירה ושחזור.</param>
-    /// <param name="logger">רכיב רישום הלוגים הייעודי של המחלקה.</param>
+    /// <param name="configuration">Interface for accessing application settings (appsettings.json).</param>
+    /// <param name="repository">Local event repository for persistence and recovery.</param>
+    /// <param name="logger">Dedicated logging component for this class.</param>
     public EventChannel(IConfiguration configuration, ISqliteEventRepository repository, ILogger<EventChannel> logger)
     {
         _logger = logger;
@@ -55,10 +55,10 @@ public class EventChannel
     }
 
     /// <summary>
-    /// מסמן אירוע שנכשלו ניסיונות השליחה שלו כ-Error,
-    /// לצורך בידוד ותחקור עתידי, ומסיר אותו מתזרים המערכת הנוכחי בזיכרון.
+    /// Marks an event whose delivery attempts have failed as Error,
+    /// for isolation and future investigation, and removes it from the current in-memory stream.
     /// </summary>
-    /// <param name="eventId">המזהה הייחודי (Guid) של האירוע שנכשל.</param>
+    /// <param name="eventId">The unique Guid identifier of the failed event.</param>
     public void MoveToError(Guid eventId)
     {
         try
@@ -73,11 +73,11 @@ public class EventChannel
     }
 
     /// <summary>
-    /// מוסיף אירוע חדש למערכת בתצורת Store-and-Forward.
+    /// Adds a new event to the system using Store-and-Forward.
     /// </summary>
-    /// <param name="dto">אובייקט הנתונים הגולמי שהתקבל מהשטח.</param>
-    /// <param name="cancellationToken">אסימון לביטול הפעולה האסינכרונית במידת הצורך.</param>
-    /// <returns>ערך המייצג את השלמת המשימה האסינכרונית ללא הקצאת זיכרון מיותרת (ValueTask).</returns>
+    /// <param name="dto">The raw data object received from the field.</param>
+    /// <param name="cancellationToken">Token to cancel the async operation if needed.</param>
+    /// <returns>A ValueTask representing the async operation without unnecessary memory allocation.</returns>
     public async ValueTask AddEventAsync(FieldEventDto dto, CancellationToken cancellationToken = default)
     {
         var id = Guid.NewGuid();
@@ -99,9 +99,9 @@ public class EventChannel
     }
 
     /// <summary>
-    /// מוחק את הרשומה לאחר אישור מסירה ל-Backend.
+    /// Deletes the record after confirmed delivery to the Backend.
     /// </summary>
-    /// <param name="id">המזהה הייחודי של האירוע שסופק בהצלחה.</param>
+    /// <param name="id">The unique identifier of the successfully delivered event.</param>
     public void ConfirmDelivery(Guid id)
     {
         try
@@ -116,11 +116,11 @@ public class EventChannel
     }
 
     /// <summary>
-    /// מוחק רשומות עם סטטוס Error או Completed שנמצאות מעל פרקי הזמן המוגדרים לכל סטטוס.
+    /// Deletes records with Error or Completed status that have exceeded the configured retention period for each status.
     /// </summary>
-    /// <param name="errorRetentionPeriod">פרק הזמן המינימלי לשמירת רשומות Error לפני מחיקה.</param>
-    /// <param name="completedRetentionPeriod">פרק הזמן המינימלי לשמירת רשומות Completed לפני מחיקה.</param>
-    /// <returns>מספר הרשומות שנמחקו.</returns>
+    /// <param name="errorRetentionPeriod">Minimum retention period for Error records before deletion.</param>
+    /// <param name="completedRetentionPeriod">Minimum retention period for Completed records before deletion.</param>
+    /// <returns>The number of deleted records.</returns>
     public int DeleteExpiredEvents(TimeSpan errorRetentionPeriod, TimeSpan completedRetentionPeriod)
     {
         try
@@ -137,17 +137,17 @@ public class EventChannel
     }
 
     /// <summary>
-    /// חושף זרם קריאה אסינכרוני מתמשך המאפשר ל-BackgroundWorker לצרוך אירועים מהתור.
+    /// Exposes a continuous async read stream that allows the BackgroundWorker to consume events from the queue.
     /// </summary>
-    /// <param name="cancellationToken">אסימון לביטול הפעולה האסינכרונית במידת הצורך.</param>
-    /// <returns>זרם נתונים אסינכרוני מסוג <see cref="IAsyncEnumerable{T}"/>.</returns>
+    /// <param name="cancellationToken">Token to cancel the async operation if needed.</param>
+    /// <returns>An async data stream of type <see cref="IAsyncEnumerable{T}"/>.</returns>
     public IAsyncEnumerable<WrappedEvent> ReadAllEventsAsync(CancellationToken cancellationToken = default)
     {
         return _channel.Reader.ReadAllAsync(cancellationToken);
     }
 
     /// <summary>
-    /// משחזר את האירועים הממתינים מהמאגר המקומי לתור הזיכרון בעת עליית האפליקציה.
+    /// Recovers pending events from the local repository into the in-memory queue on application startup.
     /// </summary>
     private void RecoverLocalFiles()
     {

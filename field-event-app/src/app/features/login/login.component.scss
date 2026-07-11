@@ -1,4 +1,4 @@
-/* מיכל ראשי - ממקם את הטופס במרכז המסך */
+/* Main container - centers the form on screen */
 .login-container {
   display: flex;
   flex-direction: column;
@@ -9,7 +9,7 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* עיצוב ה"כרטיס" של הטופס */
+/* Form "card" styling */
 form {
   background: white;
   padding: 2rem;
@@ -25,7 +25,7 @@ h2 {
   margin-bottom: 1.5rem;
 }
 
-/* עיצוב שדות הקלט */
+/* Input field styling */
 div {
   margin-bottom: 1rem;
 }
@@ -42,7 +42,7 @@ input {
   padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 6px;
-  box-sizing: border-box; /* מבטיח שה-Padding לא יפרוץ את הרוחב */
+  box-sizing: border-box; /* Ensures padding does not exceed the element width */
   font-size: 1rem;
 }
 
@@ -52,7 +52,7 @@ input:focus {
   box-shadow: 0 0 5px rgba(74, 144, 226, 0.3);
 }
 
-/* עיצוב כפתור ההתחברות */
+/* Login button styling */
 button {
   width: 100%;
   padding: 0.75rem;

@@ -1,8 +1,8 @@
 namespace FieldEventManagement.Application.DTOs;
 
 /// <summary>
-/// DTO לבקשת שינוי סטטוס אירוע על-ידי טכנאי.
-/// הסטטוס מגיע כמחרוזת כדי לא לחשוף את ה-enum הפנימי ל-API.
-/// ה-Service ממיר אותו ל-EventStatus לפני שמפעיל את ה-State Machine.
+/// DTO for a technician's request to change an event's status.
+/// The status arrives as a string to avoid exposing the internal enum to the API.
+/// The Service converts it to EventStatus before activating the State Machine.
 /// </summary>
 public record UpdateStatusDto(string NewStatus);

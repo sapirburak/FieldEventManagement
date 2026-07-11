@@ -6,17 +6,17 @@ using FieldEventManagement.Core.Entities;
 
 namespace FieldEventManagement.Application.Services;
 /// <summary>
-/// אחראית על תזמור (Orchestration) התהליך העסקי של קליטת אירוע חדש מה-Agent.
-/// המחלקה מיישמת את דפוס ה-Use Case בתוך שכבת ה-Application, 
-/// תוך הפרדה מוחלטת מהמימוש הטכנולוגי של מסד הנתונים או אמצעי התקשורת.
+/// Responsible for orchestrating the business process of receiving a new event from the Agent.
+/// This class implements the Use Case pattern within the Application layer,
+/// with complete separation from the technical implementation of the database or communication channels.
 /// </summary>
 public class EventReceiverService
 {
     private readonly IFieldEventRepository _repository;
     private readonly IRealTimeNotificationService _notificationService;
 
-    /// <param name="repository">ממשק לגישה לנתונים (Persistence Ignorance).</param>
-    /// <param name="notificationService">ממשק להפצת התראות בזמן אמת.</param>
+    /// <param name="repository">Interface for data access (Persistence Ignorance).</param>
+    /// <param name="notificationService">Interface for broadcasting real-time notifications.</param>
     public EventReceiverService(IFieldEventRepository repository, IRealTimeNotificationService notificationService)
     {
         _repository = repository;
@@ -24,31 +24,31 @@ public class EventReceiverService
     }
 
     /// <summary>
-    /// מעבדת אירוע נכנס. המערכת מבטיחה טיפול אטומי (Idempotent) באמצעות בדיקת כפילויות,
-    /// ומפעילה את ה-State Machine של ה-Domain כדי לשמור על תקינות המצב העסקי.
+    /// Processes an incoming event. The system ensures idempotent handling by checking for duplicates,
+    /// and activates the Domain State Machine to maintain business state integrity.
     /// </summary>
-    /// <param name="incomingEvent">האובייקט שעבר עטיפה מה-Agent.</param>
-    /// <exception cref="ArgumentException">נזרקת כאשר הנתונים חסרים, גורמת ל-API להחזיר 422.</exception>
+    /// <param name="incomingEvent">The wrapped object received from the Agent.</param>
+    /// <exception cref="ArgumentException">Thrown when data is missing, causing the API to return 422.</exception>
     public async Task<ProcessResult> ProcessIncomingEventAsync(WrappedEvent incomingEvent)
     {
-        // 1. הגנה מפני הודעות רעל (ולידציה ברמת ה-Application)
+        // 1. Guard against poison messages (validation at the Application layer)
         if (incomingEvent == null || incomingEvent.Data == null || string.IsNullOrWhiteSpace(incomingEvent.Data.Title))
         {
-            // שגיאה זו תתורגם ב-API ל-422 Unprocessable Entity, מה שיגרום ל-Agent שלך להעביר את ההודעה ל-Poison Queue
-            throw new ArgumentException("מבנה האירוע אינו תקין או שחסרים נתונים קריטיים.");
+            // This error translates to 422 Unprocessable Entity at the API, causing the Agent to move the message to the Poison Queue
+            throw new ArgumentException("Event structure is invalid or critical data is missing.");
         }
 
-        // 2. מנגנון Idempotency (מניעת כפילויות בגלל ה-Retry של ה-Agent)
+        // 2. Idempotency mechanism (prevents duplicates caused by Agent retries)
         var existingEvent = await _repository.ExistsAsync(incomingEvent.Id);
-        // מקרה א': האירוע קיים )
+        // Case A: event already exists
         if (existingEvent)
         {
             return new ProcessResult("Ignored", "Event already in advanced status. Update ignored.");
         }
         
-        // מקרה ב': האירוע לא קיים (יצירה)
-        // 3. הפעלת לוגיקת ה-Domain (יצירת הישות הטהורה עם ה-State Machine שלה)
-        // ברגע זה, נוצרת אוטומטית שורת ההיסטוריה הראשונה בתוך ה-Core!
+        // Case B: event does not exist (creation)
+        // 3. Activate Domain logic (create the pure entity with its State Machine)
+        // At this point, the first history row is automatically created inside Core!
         var fieldEvent = FieldEvent.Create(
             incomingEvent.Id,
             incomingEvent.Data.Title,
@@ -56,10 +56,10 @@ public class EventReceiverService
             incomingEvent.Data.Source,
             incomingEvent.Data.Location
         );
-        // 4. שימוש ב-Repository כדי לדחוף ל-DB
+        // 4. Use the Repository to push to the DB
         await _repository.AddAsync(fieldEvent);
         await _repository.SaveChangesAsync();
-        // 5. הפעלת שירות ההתראות האבסטרקטי כדי להקפיץ לסדרן הודעה ב-UI בזמן אמת
+        // 5. Activate the abstract notification service to push a real-time UI message to the dispatcher
         await _notificationService.NotifyDispatcherOfNewEventAsync(
             fieldEvent.Id,
             fieldEvent.Title,

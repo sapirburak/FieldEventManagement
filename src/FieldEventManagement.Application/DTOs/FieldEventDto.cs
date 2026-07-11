@@ -1,6 +1,6 @@
 ﻿namespace FieldEventManagement.Application.DTOs;
 
-// הנתונים הפנימיים של האירוע כפי שה-Agent שלך אורז אותם
+// The internal event data as packaged by the Agent
 public record FieldEventDto(
     string Title,
     string Description,

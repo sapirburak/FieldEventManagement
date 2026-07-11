@@ -25,14 +25,14 @@ export class LoginComponent {
   onLogin() {
     this.authService.login(this.credentials).subscribe({
       next: () => {
-        // הtoken כבר נשמר ב-localStorage ע"י AuthService.login() (tap).
-        // עכשיו פותחים את חיבור ה-SignalR עם הtoken הקיים.
-        // סדר חשוב: startConnection() לפני navigate כדי שהחיבור יהיה מוכן
-        // כשה-DispatcherDashboard נטען.
+        // The token was already stored in localStorage by AuthService.login() (tap).
+        // Now open the SignalR connection with the existing token.
+        // Order matters: startConnection() before navigate so the connection is ready
+        // when the DispatcherDashboard loads.
         this.signalRService.startConnection();
         this.router.navigate(['/dispatcher']);
       },
-      error: () => this.errorMessage = 'שם משתמש או סיסמה שגויים'
+      error: () => this.errorMessage = 'Invalid username or password'
     });
   }
 }

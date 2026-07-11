@@ -1,18 +1,18 @@
 import { EventStatus } from '../../data/models/field-event.model';
 
 /**
- * מגדיר את המעברים המותרים ב-State Machine בצד הלקוח.
- * חייב להיות זהה לטבלת ה-switch ב-FieldEvent.TransitionTo() בצד ה-Backend.
- * שימוש ב-Record לאפשר lookup מהיר ב-O(1).
+ * Defines the allowed transitions in the client-side State Machine.
+ * Must stay in sync with the switch table in FieldEvent.TransitionTo() on the Backend.
+ * Uses a Record for fast O(1) lookup.
  */
 const ALLOWED_TRANSITIONS: Record<EventStatus, EventStatus[]> = {
-  // Unassigned (ולא New) – תואם Backend
+  // Unassigned (not New) – matches Backend
   [EventStatus.Unassigned]: [EventStatus.Assigned, EventStatus.Cancelled],
 
-  // Assigned → Assigned מאפשר העברה בין טכנאים (תמיכה בדרישה: "העברת אירוע מטכנאי לטכנאי")
+  // Assigned → Assigned allows transfer between technicians (supports requirement: "transfer event from technician to technician")
   [EventStatus.Assigned]: [EventStatus.InProgress, EventStatus.Assigned, EventStatus.Cancelled],
 
-  // Completed (ולא Closed) – תואם Backend
+  // Completed (not Closed) – matches Backend
   [EventStatus.InProgress]: [EventStatus.Completed, EventStatus.Cancelled],
 
   [EventStatus.Completed]: [],
@@ -20,8 +20,8 @@ const ALLOWED_TRANSITIONS: Record<EventStatus, EventStatus[]> = {
 };
 
 /**
- * מחלקה אחראית על וולידציה של שינויי מצב בצד הלקוח.
- * מונעת שליחת בקשות לא חוקיות לשרת לפני שהן מגיעות אליו.
+ * Class responsible for validating status changes on the client side.
+ * Prevents sending invalid requests to the server before they reach it.
  */
 export class EventStateMachine {
   public static canTransition(current: EventStatus, next: EventStatus): boolean {

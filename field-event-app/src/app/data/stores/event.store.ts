@@ -3,17 +3,17 @@ import { EventStatus, FieldEvent } from '../models/field-event.model';
 import { SignalRService } from '../../core/services/signalr.service';
 
 /**
- * מנהל את ה-State המקומי של כל האירועים במערכת.
- * ה-Store מתפקד כ-Source of Truth ל-UI ומבצע מניפולציות על הנתונים (כמו פילטור אירועים פעילים).
+ * Manages the local state of all events in the system.
+ * The Store acts as the Source of Truth for the UI and performs data manipulations (such as filtering active events).
  */
 @Injectable({ providedIn: 'root' })
 export class EventStore {
-  /** Signal פנימי המכיל את כל האירועים שהתקבלו */
+  /** Internal Signal holding all received events */
   private events = signal<FieldEvent[]>([]);
 
   /** 
-   * Signal מחושב המציג רק אירועים שאינם סגורים.
-   * מתעדכן אוטומטית בכל פעם שה-events משתנה.
+   * Computed Signal that shows only non-closed events.
+   * Updates automatically whenever the events Signal changes.
    */
   public activeEvents = computed(() =>
     this.events().filter(e => e.status !== EventStatus.Completed && e.status !== EventStatus.Cancelled)
@@ -28,9 +28,9 @@ export class EventStore {
   }
 
   /**
-   * הוספת אירוע חדש ל-State.
-   * משתמש ב-immutable update לעדכון ה-Signal.
-   * @param event האירוע החדש שהתקבל מה-Backend
+   * Adds a new event to the State.
+   * Uses an immutable update to update the Signal.
+   * @param event The new event received from the Backend
    */
   private addEvent(event: FieldEvent) {
     this.events.update(current => [...current, event]);

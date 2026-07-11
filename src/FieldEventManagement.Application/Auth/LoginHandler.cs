@@ -6,7 +6,7 @@ public class LoginHandler
 
     public LoginHandler(ITokenService tokenService)
     {
-        _tokenService = tokenService; // הזרקה (DI)
+        _tokenService = tokenService; // Dependency Injection
     }
     // ...
 }

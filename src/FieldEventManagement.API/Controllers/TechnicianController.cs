@@ -8,9 +8,9 @@ using System.Security.Claims;
 namespace FieldEventManagement.API.Controllers;
 
 /// <summary>
-/// מכיל את כל ה-Endpoints שטכנאי יכול לגשת אליהם.
-/// [Authorize(Roles = "Technician")] אוכף ברמת הController שרק טכנאים יגיעו לכאן.
-/// הסדרן מנוהל ב-EventsController בנפרד – הפרדת אחריות ברורה.
+/// Contains all endpoints accessible by a technician.
+/// [Authorize(Roles = "Technician")] enforces at the Controller level that only technicians reach here.
+/// The dispatcher is managed separately in EventsController – clear separation of concerns.
 /// </summary>
 [Authorize(Roles = "Technician")]
 [ApiController]
@@ -25,8 +25,8 @@ public class TechnicianController : ControllerBase
     }
 
     /// <summary>
-    /// טכנאי מעדכן סטטוס אירוע שהוקצה אליו.
-    /// ה-State Machine ב-Domain מוודא שהמעבר חוקי (לא ניתן לדלג).
+    /// A technician updates the status of an event assigned to them.
+    /// The Domain State Machine verifies that the transition is valid (no skipping allowed).
     /// 
     /// PATCH /api/technician/events/{id}/status
     /// Body: { "newStatus": "InProgress" }
@@ -49,17 +49,17 @@ public class TechnicianController : ControllerBase
         }
         catch (InvalidFieldEventStateException ex)
         {
-            // State Machine דחה את המעבר (לדוגמה: Completed → InProgress)
+            // State Machine rejected the transition (e.g. Completed → InProgress)
             return UnprocessableEntity(ex.Message);
         }
     }
 
     /// <summary>
-    /// טכנאי שולח הערה לסדרן על אירוע פעיל.
-    /// הסדרן מקבל התראה בזמן אמת דרך SignalR.
+    /// A technician sends a note to the dispatcher on an active event.
+    /// The dispatcher receives a real-time notification via SignalR.
     /// 
     /// POST /api/technician/events/{id}/notes
-    /// Body: { "text": "צריך ציוד נוסף" }
+    /// Body: { "text": "Need additional equipment" }
     /// </summary>
     [HttpPost("{id:guid}/notes")]
     public async Task<IActionResult> AddNote(Guid id, [FromBody] AddNoteDto dto)
@@ -76,7 +76,7 @@ public class TechnicianController : ControllerBase
     }
 
     /// <summary>
-    /// טכנאי מבקש לקבל על עצמו אירוע פנוי (Unassigned).
+    /// A technician requests to claim an unassigned event.
     /// 
     /// POST /api/technician/events/{id}/request
     /// </summary>
@@ -103,8 +103,8 @@ public class TechnicianController : ControllerBase
     }
 
     /// <summary>
-    /// חולץ את ה-userId של הטכנאי המחובר מה-JWT Claims.
-    /// ClaimTypes.Name מכיל את ה-username שהוזרק ב-TokenService.
+    /// Extracts the userId of the currently authenticated technician from the JWT Claims.
+    /// ClaimTypes.Name contains the username injected by TokenService.
     /// </summary>
     private string GetCurrentUserId() =>
         User.FindFirstValue(ClaimTypes.Name) ?? "unknown";

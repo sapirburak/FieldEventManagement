@@ -21,6 +21,6 @@ export const routes: Routes = [
             .then(m => m.TechnicianDashboardComponent),
         canActivate: [authGuard]
     },
-    // ניתוב ברירת מחדל
+    // Default route
     { path: '', redirectTo: 'login', pathMatch: 'full' }
 ];

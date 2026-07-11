@@ -12,7 +12,7 @@ public class TokenService : ITokenService
 
     public TokenService(IConfiguration config)
     {
-        // קוראים את המפתח מהגדרות המערכת
+        // Read the key from application settings
         _key = config["Jwt:Key"] ?? throw new Exception("JWT Key missing");
     }
 
@@ -21,7 +21,7 @@ public class TokenService : ITokenService
         var claims = new[]
         {
             new Claim(ClaimTypes.Name, username),
-            new Claim(ClaimTypes.Role, role) // כאן אנחנו שותלים את התפקיד בטוקן!
+            new Claim(ClaimTypes.Role, role) // Embed the user's role in the token
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_key));

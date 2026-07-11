@@ -1,6 +1,6 @@
 /**
- * מייצג אירוע שטח במערכת.
- * ישות זו היא ה-Core של המערכת ומועברת בין ה-Agent לשרת וללקוח.
+ * Represents a field event in the system.
+ * This entity is the core of the system and is passed between the Agent, the server, and the client.
  */
 export interface FieldEvent {
   id: string;
@@ -9,20 +9,20 @@ export interface FieldEvent {
   status: EventStatus;
   location: string;
   timestamp: Date;
-  /** ID של הטכנאי שאליו האירוע מוקצה כרגע. null = פנוי. */
+  /** ID of the technician the event is currently assigned to. null = unassigned. */
   assignedTechnicianId?: string | null;
   lastUpdatedBy?: string;
 }
 
 /**
- * המצבים האפשריים במחזור החיים של האירוע (State Machine).
- * הערכים חייבים להתאים בדיוק ל-enum EventStatus שבצד ה-Backend (.NET Core),
- * כי SignalR מסריל את שם ה-enum כמחרוזת.
+ * Possible states in the event lifecycle (State Machine).
+ * Values must exactly match the EventStatus enum on the Backend (.NET Core),
+ * because SignalR serializes the enum name as a string.
  */
 export enum EventStatus {
-  Unassigned = 'Unassigned', // מצב ראשוני – תואם Backend: Unassigned
-  Assigned = 'Assigned',     // הוקצה לטכנאי
-  InProgress = 'InProgress', // בטיפול
-  Completed = 'Completed',   // הושלם – תואם Backend: Completed (לא Closed)
-  Cancelled = 'Cancelled'    // מבוטל
+  Unassigned = 'Unassigned', // Initial state – matches Backend: Unassigned
+  Assigned = 'Assigned',     // Assigned to a technician
+  InProgress = 'InProgress', // Being handled
+  Completed = 'Completed',   // Completed – matches Backend: Completed (not Closed)
+  Cancelled = 'Cancelled'    // Cancelled
 }

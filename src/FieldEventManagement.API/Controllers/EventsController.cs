@@ -7,7 +7,7 @@ using System.Data.Common;
 
 namespace FieldEventManagement.Api.Controllers;
 
-[Authorize(Roles = "Scheduler")] // רק מי שיש לו Role של Scheduler בטוקן יעבור
+[Authorize(Roles = "Scheduler")] // Only users with the Scheduler role in their token are allowed
 [ApiController]
 [Route("api/[controller]")]
 public class EventsController : ControllerBase
@@ -19,15 +19,15 @@ public class EventsController : ControllerBase
         _eventService = eventService;
     }
 
-    [Authorize] // כל מי שמחזיק טוקן תקין (לא משנה התפקיד)
+    [Authorize] // Anyone holding a valid token (regardless of role)
     [HttpPost("receiveEvent")]
     public async Task<IActionResult> ReceiveEvent([FromBody] WrappedEvent incomingEvent)
     {
         try
         {
-            // כאן ה-API קורא ל-Service של ה-Application
+            // The API calls the Application Service here
             ProcessResult result = await _eventService.ProcessIncomingEventAsync(incomingEvent);
-            return Ok(result); // יחזיר JSON: { "status": "Updated", "message": "..." }
+            return Ok(result); // Returns JSON: { "status": "Updated", "message": "..." }
         }
         catch (DbException ex) // שגיאת תשתית
         {
@@ -36,13 +36,13 @@ public class EventsController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            // שגיאת ולידציה -> 422 Unprocessable Entity
+            // Validation error -> 422 Unprocessable Entity
             return UnprocessableEntity(ex.Message);
         }
         catch (Exception)
         {
-            // שגיאה לא צפויה -> 500
-            return StatusCode(500, "שגיאה פנימית בשרת.");
+            // Unexpected error -> 500
+            return StatusCode(500, "Internal server error.");
         }
     }
 }

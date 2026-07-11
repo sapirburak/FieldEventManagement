@@ -7,7 +7,7 @@ import { errorInterceptor } from './core/interceptors/error.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [provideHttpClient(
-    withInterceptors([errorInterceptor]) // הזרקת האינטרספטור לכל בקשות ה-HTTP
+    withInterceptors([errorInterceptor]) // Inject the interceptor for all HTTP requests
   ),
   provideRouter(routes),
  ]

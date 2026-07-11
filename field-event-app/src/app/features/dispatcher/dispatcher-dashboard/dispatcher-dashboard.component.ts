@@ -10,7 +10,7 @@ import { EventFacade } from '../../../core/facades/event.facade';
   styleUrl: './dispatcher-dashboard.component.scss'
 })
 export class DispatcherDashboardComponent {
- // שימוש ב-inject לקבלת ה-Facade
+ // Use inject to obtain the Facade
   protected facade: EventFacade = inject(EventFacade);
 
   assign(eventId: string, techId: string) {
