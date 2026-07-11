@@ -9,6 +9,6 @@ namespace FieldEventManagement.Core.Entities
         public Guid Id { get; private set; }
         public string Username { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty; // Never store a plain-text password!
-        public string Role { get; set; } = string.Empty; // "Scheduler" or "Technician"
+        public string Role { get; set; } = string.Empty; // "Dispatcher" or "Technician"
     }
 }

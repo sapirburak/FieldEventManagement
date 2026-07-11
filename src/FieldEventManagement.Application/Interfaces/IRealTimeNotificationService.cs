@@ -16,12 +16,12 @@
         /// Broadcasts to dispatchers that an existing event's status was changed by a technician.
         /// Required when a technician updates status (e.g. Assigned → InProgress).
         /// </summary>
-        Task NotifySchedulerOfStatusUpdateAsync(Guid eventId, string newStatus, string technicianId);
+        Task NotifyDispatcherOfStatusUpdateAsync(Guid eventId, string newStatus, string technicianId);
 
         /// <summary>
         /// Broadcasts to dispatchers that a technician sent a note on an active event.
         /// </summary>
-        Task NotifySchedulerOfNoteAsync(Guid eventId, string note, string technicianId);
+        Task NotifyDispatcherOfNoteAsync(Guid eventId, string note, string technicianId);
 
         /// <summary>
         /// Broadcasts to a specific technician that a new event has been assigned to them.

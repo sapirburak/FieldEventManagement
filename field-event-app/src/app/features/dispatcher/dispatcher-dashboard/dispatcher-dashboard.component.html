@@ -1,5 +1,8 @@
  <div class="dashboard">
-      <h1>Dispatcher Dashboard</h1>
+      <div class="dashboard-header">
+        <h1>Dispatcher Dashboard</h1>
+        <button class="logout-btn" (click)="logout()">Logout</button>
+      </div>
       <div class="event-list">
         @for (event of facade.activeEvents(); track event.id) {
           <div class="event-card">

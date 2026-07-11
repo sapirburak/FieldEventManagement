@@ -7,7 +7,7 @@ using System.Data.Common;
 
 namespace FieldEventManagement.Api.Controllers;
 
-[Authorize(Roles = "Scheduler")] // Only users with the Scheduler role in their token are allowed
+[Authorize(Roles = "Dispatcher")] // Only users with the Dispatcher role in their token are allowed
 [ApiController]
 [Route("api/[controller]")]
 public class EventsController : ControllerBase

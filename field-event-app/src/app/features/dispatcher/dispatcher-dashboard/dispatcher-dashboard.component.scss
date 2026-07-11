@@ -4,10 +4,31 @@
   min-height: 100vh;
 }
 
-.dashboard h1 {
-  color: #333;
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
-  text-align: center;
+}
+
+.dashboard-header h1 {
+  color: #333;
+  margin: 0;
+}
+
+.logout-btn {
+  padding: 0.5rem 1.2rem;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.logout-btn:hover {
+  background-color: #c0392b;
 }
 
 /* Event list as a Grid */

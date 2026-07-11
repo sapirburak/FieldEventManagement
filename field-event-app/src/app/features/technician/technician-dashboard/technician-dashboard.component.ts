@@ -2,6 +2,7 @@ import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EventFacade } from '../../../core/facades/event.facade';
+import { AuthService } from '../../../core/services/auth.service';
 import { EventStatus, FieldEvent } from '../../../data/models/field-event.model';
 
 @Component({
@@ -13,9 +14,10 @@ import { EventStatus, FieldEvent } from '../../../data/models/field-event.model'
 })
 export class TechnicianDashboardComponent {
   private facade = inject(EventFacade);
+  private authService = inject(AuthService);
 
-  // TODO: extract technicianId from the JWT (AuthService.getCurrentUserId()).
-  private technicianId = 'current-technician-id';
+  // Read the username from the JWT – matches the assignedTechnicianId stored by the backend
+  private technicianId = this.authService.getUsername() ?? '';
 
   // Expose the enum to the template so it can be used in comparisons
   protected EventStatus = EventStatus;
@@ -41,7 +43,7 @@ export class TechnicianDashboardComponent {
     }
   }
 
-  // Spec: "can send a note / update to the scheduler on an active event"
+  // Spec: "can send a note / update to the dispatcher on an active event"
   onSendNote(eventId: string): void {
     this.facade.sendNote(eventId, this.noteText());
     this.noteText.set('');

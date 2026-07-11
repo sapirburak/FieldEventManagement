@@ -48,7 +48,7 @@ public class TechnicianEventService
         await _repository.SaveChangesAsync();
 
         // 4. Notify the dispatcher
-        await _notificationService.NotifySchedulerOfStatusUpdateAsync(eventId, newStatus, technicianId);
+        await _notificationService.NotifyDispatcherOfStatusUpdateAsync(eventId, newStatus, technicianId);
 
         return new ProcessResult("Updated", $"Event status changed to {newStatus}.");
     }
@@ -69,9 +69,9 @@ public class TechnicianEventService
         // TODO: _repository.AddNoteAsync(eventId, note, technicianId);
         // TODO: await _repository.SaveChangesAsync();
 
-        await _notificationService.NotifySchedulerOfNoteAsync(eventId, note, technicianId);
+        await _notificationService.NotifyDispatcherOfNoteAsync(eventId, note, technicianId);
 
-        return new ProcessResult("NoteAdded", "Note sent to scheduler.");
+        return new ProcessResult("NoteAdded", "Note sent to dispatcher.");
     }
 
     /// <summary>

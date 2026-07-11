@@ -47,9 +47,26 @@ export class SignalRService {
             .start()
             .then(() => {
                 console.log('[SignalR] Connection established.');
-                return this.hubConnection.invoke('JoinSchedulerGroup');
+                return this.hubConnection.invoke('JoinDispatcherGroup');
             })
-            .then(() => console.log('[SignalR] Joined Schedulers group.'))
+            .then(() => console.log('[SignalR] Joined Dispatchers group.'))
             .catch(err => console.error('[SignalR] Connection failed:', err));
+    }
+
+    /**
+     * Stops the SignalR connection and resets the flag so startConnection()
+     * can be called again after a fresh login.
+     * Must be called on logout to avoid a stale connection with an expired token.
+     */
+    public stopConnection(): void {
+        if (!this.connectionStarted || !this.hubConnection) {
+            return;
+        }
+        this.hubConnection.stop()
+            .then(() => console.log('[SignalR] Connection stopped.'))
+            .catch(err => console.error('[SignalR] Failed to stop connection:', err))
+            .finally(() => {
+                this.connectionStarted = false;
+            });
     }
 }

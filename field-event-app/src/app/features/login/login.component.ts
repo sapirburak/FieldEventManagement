@@ -28,9 +28,16 @@ export class LoginComponent {
         // The token was already stored in localStorage by AuthService.login() (tap).
         // Now open the SignalR connection with the existing token.
         // Order matters: startConnection() before navigate so the connection is ready
-        // when the DispatcherDashboard loads.
+        // when the dashboard loads.
         this.signalRService.startConnection();
-        this.router.navigate(['/dispatcher']);
+
+        // Navigate to the correct dashboard based on the role embedded in the JWT.
+        const role = this.authService.getRole();
+        if (role === 'Technician') {
+          this.router.navigate(['/technician']);
+        } else {
+          this.router.navigate(['/dispatcher']); // Dispatcher and any other role
+        }
       },
       error: () => this.errorMessage = 'Invalid username or password'
     });

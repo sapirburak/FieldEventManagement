@@ -15,15 +15,21 @@ public class RealTimeNotificationService : IRealTimeNotificationService
 
     /// <summary>
     /// Notifies all connected dispatchers about a new event received from the Agent.
+    /// The payload shape matches the Angular FieldEvent interface exactly:
+    /// id (not eventId), status, description are included so the frontend can
+    /// construct a full FieldEvent without a separate GET request.
     /// </summary>
     public async Task NotifyDispatcherOfNewEventAsync(Guid eventId, string title, string location)
     {
-        await _hubContext.Clients.Group("Schedulers").SendAsync("ReceiveNewEvent", new
+        await _hubContext.Clients.Group("Dispatchers").SendAsync("ReceiveNewEvent", new
         {
-            eventId,
+            id = eventId,          // matches FieldEvent.id in the Angular model
             title,
+            description = string.Empty,
+            status = "Unassigned", // all new events start as Unassigned
             location,
-            timestamp = DateTime.UtcNow
+            timestamp = DateTime.UtcNow,
+            assignedTechnicianId = (string?)null
         });
     }
 
@@ -31,9 +37,9 @@ public class RealTimeNotificationService : IRealTimeNotificationService
     /// Notifies all dispatchers that a technician updated the status of an active event.
     /// Angular event: "ReceiveStatusUpdate"
     /// </summary>
-    public async Task NotifySchedulerOfStatusUpdateAsync(Guid eventId, string newStatus, string technicianId)
+    public async Task NotifyDispatcherOfStatusUpdateAsync(Guid eventId, string newStatus, string technicianId)
     {
-        await _hubContext.Clients.Group("Schedulers").SendAsync("ReceiveStatusUpdate", new
+        await _hubContext.Clients.Group("Dispatchers").SendAsync("ReceiveStatusUpdate", new
         {
             eventId,
             newStatus,
@@ -46,9 +52,9 @@ public class RealTimeNotificationService : IRealTimeNotificationService
     /// Notifies all dispatchers that a technician added a note on an event.
     /// Angular event: "ReceiveNote"
     /// </summary>
-    public async Task NotifySchedulerOfNoteAsync(Guid eventId, string note, string technicianId)
+    public async Task NotifyDispatcherOfNoteAsync(Guid eventId, string note, string technicianId)
     {
-        await _hubContext.Clients.Group("Schedulers").SendAsync("ReceiveNote", new
+        await _hubContext.Clients.Group("Dispatchers").SendAsync("ReceiveNote", new
         {
             eventId,
             note,
@@ -65,7 +71,7 @@ public class RealTimeNotificationService : IRealTimeNotificationService
     public async Task NotifyTechnicianOfAssignmentAsync(Guid eventId, string technicianId, string title)
     {
         // TODO: replace with direct send to the technician's ConnectionId
-        await _hubContext.Clients.Group("Schedulers").SendAsync("ReceiveAssignment", new
+        await _hubContext.Clients.Group("Dispatchers").SendAsync("ReceiveAssignment", new
         {
             eventId,
             technicianId,
@@ -83,13 +89,13 @@ public class RealTimeNotificationService : IRealTimeNotificationService
 public class EventHub : Hub
 {
     /// <summary>
-    /// Adds the client to the Schedulers group to receive notifications.
-    /// [Authorize(Roles = "Scheduler")] ensures only dispatchers can join this group.
-    /// The role name "Scheduler" matches the Role value in the Users table in the DB.
+    /// Adds the client to the Dispatchers group to receive notifications.
+    /// [Authorize(Roles = "Dispatcher")] ensures only dispatchers can join this group.
+    /// The role name "Dispatcher" matches the Role value in the Users table in the DB.
     /// </summary>
-    [Authorize(Roles = "Scheduler")]
-    public async Task JoinSchedulerGroup()
+    [Authorize(Roles = "Dispatcher")]
+    public async Task JoinDispatcherGroup()
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, "Schedulers");
+        await Groups.AddToGroupAsync(Context.ConnectionId, "Dispatchers");
     }
 }

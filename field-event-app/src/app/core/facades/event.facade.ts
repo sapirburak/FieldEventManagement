@@ -39,8 +39,8 @@ export class EventFacade {
     }
 
     /**
-     * Sends a free-text note from the technician to the scheduler.
-        * Spec: "can send a note / update to the scheduler on an active event"
+     * Sends a free-text note from the technician to the dispatcher.
+        * Spec: "can send a note / update to the dispatcher on an active event"
      * TODO: inject HttpClient and call POST /api/technician/events/{id}/notes
      */
     public sendNote(eventId: string, note: string): void {
