@@ -21,3 +21,6 @@
 /src/.vs/CopilotSnapshots/960E886C11A0224A9AA06745847BEB64
 /src/.vs/CopilotSnapshots/3E2B0C541AC8E148B0F4BE657C28676C
 /src/FieldEventManagement.slnLaunch.user
+/.vs/CopilotSnapshots
+/src/FieldEventManagement.Core.Tests
+/src/FieldEventManagement.Agent/LocalDatabase
